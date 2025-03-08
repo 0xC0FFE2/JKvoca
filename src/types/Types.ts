@@ -8,3 +8,5 @@ export interface Word {
   }
   
   export type StudyMode = "englishToKorean" | "koreanToEnglish";
+
+  export type FlashcardMode = 'flashcard' | 'review';
