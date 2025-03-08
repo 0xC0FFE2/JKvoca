@@ -14,12 +14,24 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: "LightFont";
+  src: url("./assets/fonts/font2.ttf")
+    format("otf");
+  font-weight: 900;
+  font-style: normal;
+}
+
 * {
   font-family: "DefaultSysFont";
 }
 
 .font-bold {
   font-family: "BoldFont";
+}
+
+.font-light {
+  font-family: "LightFont";
 }
 
 ::-webkit-scrollbar {
