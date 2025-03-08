@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import logo from "../../assets/logos/logo_web.png";
-import { Search, User, Settings, LogOut, Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import logo from "../../assets/logos/logo_RX_BLACK.svg";
+import { Search, User, Settings, LogOut, Heart, ArrowRight } from "lucide-react";
 
 const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event: { target: any }) => {
@@ -23,23 +26,47 @@ const Header = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
   };
 
+  const handleSearch = () => {
+    if (searchTerm.trim()) {
+      navigate(`/search/${searchTerm}`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   return (
     <header className="w-full border-b border-gray-200 py-3 px-4 flex items-center justify-between bg-white sticky top-0 z-50">
       <div className="flex items-center text-gray-700 font-medium">
-        <img src={logo} alt="StarPick" className="mr-2 h-5 w-5" /> StarPick
+        <img src={logo} alt="JKvoca" className="h-10" />
       </div>
 
       <div className="flex-1 max-w-xl mx-4">
         <div className="relative">
           <input
             type="text"
-            placeholder="당신의 연예인을 찾아보세요!"
+            placeholder="JK가 만든 단어장을 찾아보세요"
             className="w-full py-2 pl-10 pr-4 border border-indigo-100 rounded-full bg-[#f8faff] text-sm focus:outline-none focus:ring-2 focus:ring-[#C7D9DD] transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
           <Search
             size={18}
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black-400"
           />
+          
+          {searchTerm && (
+            <button
+              onClick={handleSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-indigo-500 text-white p-1 rounded-full hover:bg-indigo-600 transition-colors"
+            >
+              <ArrowRight size={16} />
+            </button>
+          )}
         </div>
       </div>
 

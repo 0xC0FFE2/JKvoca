@@ -1,165 +1,46 @@
 import React from "react";
-import Logo from "../../assets/logos/logo_RX_WHITE.png";
+import Logo from "../../assets/logos/logo_RX_BLACK.svg";
 
 const Footer: React.FC = () => {
+  const currentYear = new Date().getFullYear();
+  
   return (
-    <footer className="bg-gray-800 text-white py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between mb-8">
-            <div className="mb-8 md:mb-0">
-              <div className="text-3xl font-bold mb-4">
-                <img src={Logo} alt="StarPick Limited" className="h-24" />
-              </div>
-              <p className="text-gray-400 max-w-xs">
-                (주)스타픽 리미티드<br/>대표 : 이동현 , 문의 : cs@starpick.cc
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-              <div>
-                <h4 className="text-lg font-semibold mb-4">서비스</h4>
-                <ul className="space-y-2">
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      기능 소개
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      프리미엄
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      업데이트
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      FAQ
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold mb-4">회사</h4>
-                <ul className="space-y-2">
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      소개
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      팀
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      채용
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      블로그
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold mb-4">연락처</h4>
-                <ul className="space-y-2">
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      문의하기
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      지원
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition"
-                    >
-                      파트너십
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-gray-700 flex flex-col md:flex-row justify-between items-center">
-            <div className="text-gray-400 mb-4 md:mb-0">
-              © 2025 StarPick. All rights reserved.
-            </div>
-            <div className="flex space-x-6">
-              <a href="#" className="text-gray-400 hover:text-white transition">
-                <svg
-                  className="w-6 h-6"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
-                <svg
-                  className="w-6 h-6"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition">
-                <svg
-                  className="w-6 h-6"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                </svg>
-              </a>
-            </div>
+    <footer className="bg-white pt-6 pb-6 border-t border-gray-100">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-4">
+          <img src={Logo} alt="StarPick Limited" className="h-10 mb-2" />
+          <p className="text-gray-500 text-midium font-bold tracking-wide mb-1">
+            JKvoca Service
+          </p>
+          <p className="text-gray-500 text-sm font-light tracking-wide">
+            운영사 : (주)나누클라우드홀딩스
+          </p>
+          <p className="text-gray-500 text-sm font-light mt-1">
+            대표 : 이동현 · 문의 : cs@nanu.cc · 비즈니스 문의 : biz@nanu.cc
+          </p>
+        </div>
+        
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            <a href="https://nanu.cc/static/docs/eula.html" className="text-gray-900 hover:text-blue-500 text-sm font-medium transition-colors">
+              이용약관
+            </a>
+            <a href="https://nanu.cc/static/docs/privacy.html" className="text-gray-900 hover:text-blue-500 text-sm transition-colors">
+              개인정보처리방침
+            </a>
+            <a href="#" className="text-gray-900 hover:text-blue-500 text-sm font-medium transition-colors">
+              문의하기
+            </a>
           </div>
         </div>
-      </footer>
+        
+        <div className="border-gray-100">
+          <p className="text-gray-400 text-xs font-light mt-2">
+            본 서비스는 나누클라우드홀딩스의 자산이며 저작권법과 기타 법률에 의해 보호됩니다
+          </p>
+        </div>
+      </div>
+    </footer>
   );
 };
 
