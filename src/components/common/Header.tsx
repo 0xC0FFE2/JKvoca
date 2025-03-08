@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import logo from "../../assets/logos/logo_RX_BLACK.svg";
+import logoMobile from "../../assets/logos/logo_RR.svg";
 import { Search, User, Settings, LogOut, Heart, ArrowRight } from "lucide-react";
 
 const Header = () => {
@@ -42,11 +43,22 @@ const Header = () => {
     <header className="w-full border-b border-gray-200 py-3 px-4 flex items-center justify-between bg-white sticky top-0 z-50">
       <div className="flex items-center text-gray-700 font-medium">
         <Link to="/">
-          <img src={logo} alt="JKvoca" className="h-10 cursor-pointer" />
+          {/* 데스크톱 로고 - 모바일에서 숨김 */}
+          <img 
+            src={logo} 
+            alt="JKvoca" 
+            className="h-10 cursor-pointer hidden md:block" 
+          />
+          {/* 모바일 로고 - 데스크톱에서 숨김 */}
+          <img 
+            src={logoMobile} 
+            alt="JKvoca" 
+            className="h-8 cursor-pointer md:hidden" 
+          />
         </Link>
       </div>
 
-      <div className="flex-1 max-w-xl mx-4">
+      <div className="flex-1 max-w-xl mx-4 hidden sm:block">
         <div className="relative">
           <input
             type="text"
@@ -71,6 +83,14 @@ const Header = () => {
           )}
         </div>
       </div>
+
+      {/* 모바일에서만 보이는 검색 아이콘 */}
+      <button 
+        className="sm:hidden p-2 rounded-full bg-indigo-50 hover:bg-indigo-100"
+        onClick={() => navigate('/search')}
+      >
+        <Search size={18} className="text-indigo-600" />
+      </button>
 
       <div className="relative" ref={userMenuRef}>
         <button
