@@ -321,6 +321,15 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
                 </button>
               </>
             )}
+
+            {(showAnswer) && (
+              <button
+                onClick={moveToNextWord}
+                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-200"
+              >
+                다음
+              </button>
+            )}
           </div>
         </div>
       )}

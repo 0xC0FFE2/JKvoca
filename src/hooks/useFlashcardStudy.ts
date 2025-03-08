@@ -29,7 +29,6 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
     if (currentIndex < words.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // 마지막 카드면 완료 상태로 변경
       setIsCompleted(true);
     }
   };
