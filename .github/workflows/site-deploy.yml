@@ -1,0 +1,48 @@
+name: Deploy To Site
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  production-deploy:
+    runs-on: ubuntu-latest
+
+    environment: DEPLOY
+
+    steps:
+    - name: node checkout
+      uses: actions/checkout@v3
+
+    - name: get nodejs
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: yarn install
+      run: corepack enable
+
+    - name: yarn install
+      run: yarn install
+
+    - name: react build
+      run: yarn build
+
+    - name: S3 Content Copy
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_ID }} 
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+      run: |
+        aws s3 sync dist/ s3://$S3_BUCKET_NAME --delete --region $AWS_REGION
+    
+    - name: CloudFront Deploy
+      uses: chetan/invalidate-cloudfront-action@master
+      env:
+        PATHS: '/*'
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: 'us-east-1'
+        DISTRIBUTION: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}

@@ -1,0 +1,33 @@
+@import "tailwindcss";
+@font-face {
+  font-family: "DefaultSysFont";
+  src: url("./assets/fonts/font1.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "BoldFont";
+  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2404@1.0/Freesentation-9Black.woff2")
+    format("woff2");
+  font-weight: 900;
+  font-style: normal;
+}
+
+* {
+  font-family: "DefaultSysFont";
+}
+
+.font-bold {
+  font-family: "BoldFont";
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+html,
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
