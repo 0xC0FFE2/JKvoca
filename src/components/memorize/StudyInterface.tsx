@@ -321,20 +321,10 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
                 </button>
               </>
             )}
-
-            {(isCorrect === true || showAnswer) && (
-              <button
-                onClick={moveToNextWord}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-200"
-              >
-                다음 단어
-              </button>
-            )}
           </div>
         </div>
       )}
 
-      {/* 단어 목록 영역 */}
       <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-8">
         <h3 className="text-gray-700 font-medium mb-3">이 배치의 단어:</h3>
         <div className="flex flex-wrap gap-2">
