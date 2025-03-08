@@ -3,8 +3,6 @@ import { useParams } from "react-router-dom";
 import Layout from "../layouts/Layout";
 import StudyModeSelector from "../components/vocabulary/StudyModeSelector";
 import { Book, Users, BarChart, Volume2, Star, ChevronDown, ChevronUp } from "lucide-react";
-
-// TTS 유틸리티 임포트
 import { speakWord } from "../utils/tts";
 
 interface Word {
@@ -36,7 +34,6 @@ const dummyWords: Record<string, Word[]> = {
   })),
 };
 
-// 단어장 정보
 const vocabularyInfo: Record<string, {
   title: string;
   description: string;
@@ -65,13 +62,12 @@ const VocabularyPage: React.FC = () => {
   const id = vocabId || "";
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [wordsPerPage, setWordsPerPage] = useState(24); // PC에서 더 많은 단어 표시
+  const [wordsPerPage, setWordsPerPage] = useState(24); 
   const [expandedWordId, setExpandedWordId] = useState<number | null>(null);
   const [bookmarkedWords, setBookmarkedWords] = useState<number[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // 그리드/리스트 뷰 모드 추가
-  const [playingWordId, setPlayingWordId] = useState<number | null>(null); // 재생 중인 단어 ID
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [playingWordId, setPlayingWordId] = useState<number | null>(null);
   
-  // 현재 단어장의 단어 목록과 정보
   const words = dummyWords[id] || [];
   const info = vocabularyInfo[id] || {
     title: "단어장",
@@ -81,15 +77,12 @@ const VocabularyPage: React.FC = () => {
     category: "기타"
   };
   
-  // 현재 페이지의 단어들만 추출
   const indexOfLastWord = currentPage * wordsPerPage;
   const indexOfFirstWord = indexOfLastWord - wordsPerPage;
   const currentWords = words.slice(indexOfFirstWord, indexOfLastWord);
   
-  // 페이지 변경 핸들러
   const paginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
-    // 페이지 상단으로 스크롤
     window.scrollTo(0, 0);
   };
   
@@ -106,15 +99,12 @@ const VocabularyPage: React.FC = () => {
     );
   };
 
-  // 단어 발음 재생 함수
   const handleSpeakWord = (word: Word, event: React.MouseEvent) => {
-    event.stopPropagation(); // 이벤트 전파 방지
+    event.stopPropagation();
     setPlayingWordId(word.id);
     
-    // 단어 재생
     speakWord(word.english);
     
-    // 재생 상태 표시를 위한 타이머 (약 2초)
     setTimeout(() => {
       setPlayingWordId(null);
     }, 2000);
@@ -129,7 +119,6 @@ const VocabularyPage: React.FC = () => {
     }
   };
 
-  // 디바이스 크기에 따라 그리드 열 수 조정
   const getGridCols = () => {
     return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
   };
@@ -138,7 +127,6 @@ const VocabularyPage: React.FC = () => {
     <Layout>
       <div className="max-w-full mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row lg:items-start">
-          {/* 좌측 사이드바 (PC에서만 표시) */}
           <div className="hidden lg:block lg:w-64 mr-8 flex-shrink-0">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sticky top-20">
               <h2 className="font-bold text-lg text-gray-800 mb-4">단어장 정보</h2>
@@ -197,16 +185,13 @@ const VocabularyPage: React.FC = () => {
             </div>
           </div>
           
-          {/* 메인 콘텐츠 영역 */}
           <div className="flex-grow">
-            {/* 단어장 헤더 */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">{info.title}</h1>
                 <p className="text-sm text-gray-600 mb-4 sm:mb-0">{info.description}</p>
               </div>
               
-              {/* 모바일에서만 표시되는 정보 */}
               <div className="flex flex-wrap gap-2 lg:hidden">
                 <div className="flex items-center px-3 py-1 bg-blue-50 rounded">
                   <Book size={14} className="text-blue-500 mr-1" />
@@ -225,10 +210,8 @@ const VocabularyPage: React.FC = () => {
               </div>
             </div>
             
-            {/* 학습 모드 선택 */}
             <StudyModeSelector vocabularyId={id} />
             
-            {/* 모바일에서 표시 설정 */}
             <div className="flex items-center justify-between mb-4 lg:hidden">
               <div className="flex border rounded overflow-hidden">
                 <button 
@@ -256,7 +239,6 @@ const VocabularyPage: React.FC = () => {
               </select>
             </div>
             
-            {/* 단어 목록 */}
             {viewMode === 'grid' ? (
               // 그리드 뷰
               <div className={`grid ${getGridCols()} gap-4 mb-6`}>
@@ -329,7 +311,6 @@ const VocabularyPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              // 리스트 뷰 (테이블 형식)
               <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-gray-50 text-gray-700">
@@ -405,15 +386,12 @@ const VocabularyPage: React.FC = () => {
               </div>
             )}
             
-            {/* 페이지네이션 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 flex items-center justify-between">
-              {/* 현재 위치 정보 */}
               <div className="text-xs text-gray-500">
                 <span className="font-medium">{indexOfFirstWord + 1}</span> - <span className="font-medium">{Math.min(indexOfLastWord, words.length)}</span> / {words.length}개 표시
                 (<span className="font-medium">{currentPage}</span>/{Math.ceil(words.length / wordsPerPage)} 페이지)
               </div>
               
-              {/* 페이지네이션 */}
               <div className="flex items-center">
                 <button
                   onClick={() => paginate(1)}
@@ -442,7 +420,6 @@ const VocabularyPage: React.FC = () => {
                 <div className="hidden md:flex">
                   {Array.from({ length: Math.ceil(words.length / wordsPerPage) }, (_, i) => {
                     const pageNumber = i + 1;
-                    // 현재 페이지 주변의 5개 페이지만 표시
                     if (
                       pageNumber === 1 || 
                       pageNumber === Math.ceil(words.length / wordsPerPage) ||
