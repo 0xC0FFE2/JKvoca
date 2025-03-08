@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
   
   return (
     <footer className="bg-white pt-6 pb-6 border-t border-gray-100">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto pl-2">
         <div className="mb-4">
           <img src={Logo} alt="StarPick Limited" className="h-10 mb-2" />
           <p className="text-gray-500 text-midium font-bold tracking-wide mb-1">
