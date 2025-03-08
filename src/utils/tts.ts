@@ -1,16 +1,20 @@
-export const speakWord = (text: string, language: string = "en-US"): void => {
-  const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${language}&q=${encodeURIComponent(
-    text
-  )}`;
+import { Word } from "../types/Types";
 
-  const audio = new Audio(url);
-  audio.play().catch((error) => {
-    console.error("fucked", error);
-    useBrowserTTS(text, language);
-  });
+export const getVocabulary = (id: string): Word[] => {
+  return Array(50)
+    .fill(null)
+    .map((_, index) => ({
+      id: index + 1,
+      english: `Word ${index + 1}`,
+      korean: `단어 ${index + 1}`,
+      example: `This is an example sentence using Word ${index + 1}.`,
+      pronunciation: `/wɜːrd ${index + 1}/`,
+      difficulty:
+        index % 3 === 0 ? "easy" : index % 3 === 1 ? "medium" : "hard",
+    }));
 };
 
-const useBrowserTTS = (text: string, language: string = "en-US"): void => {
+export const speakWord = (text: string, language: string = "en-US"): void => {
   if ("speechSynthesis" in window) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = language;
@@ -24,9 +28,31 @@ const useBrowserTTS = (text: string, language: string = "en-US"): void => {
 
     window.speechSynthesis.speak(utterance);
   } else {
-    console.error("brower is fucked");
+    console.error("브라우저가 음성 합성을 지원하지 않습니다");
     alert(
       "음성 합성 기능을 사용할 수 없습니다. 브라우저를 업데이트하거나 다른 브라우저를 사용해 주세요."
     );
   }
+};
+
+export const getKoreanInitial = (text: string): string => {
+  const result: string[] = [];
+  const initialConsonants = [
+    "ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ",
+    "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ",
+  ];
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const code = char.charCodeAt(0);
+
+    if (code >= 44032 && code <= 55203) {
+      const initialIndex = Math.floor((code - 44032) / 588);
+      result.push(initialConsonants[initialIndex]);
+    } else {
+      result.push(char);
+    }
+  }
+
+  return result.join("");
 };
