@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Word, StudyMode } from '../types/Types';
+import { Word } from '../types/Types';
 import { getVocabulary } from '../utils/tts';
 
 interface UseFlashcardStudyProps {
@@ -13,12 +13,13 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
   const [words, setWords] = useState<Word[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [knownWords, setKnownWords] = useState<number[]>([]);
-  const [studyMode, setStudyMode] = useState<StudyMode>('englishToKorean');
+  const [isCompleted, setIsCompleted] = useState(false);
   
   useEffect(() => {
     if (vocabId) {
       const fetchedWords = getVocabulary(vocabId);
       setWords(fetchedWords);
+      setIsCompleted(false);
     }
   }, [vocabId]);
   
@@ -27,13 +28,9 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
   const goToNextCard = () => {
     if (currentIndex < words.length - 1) {
       setCurrentIndex(currentIndex + 1);
-    } else if (studyMode === 'englishToKorean' && words.length > 0) {
-      const unknownWords = words.filter(word => !knownWords.includes(word.id));
-      if (unknownWords.length > 0) {
-        setStudyMode('koreanToEnglish');
-        setWords(unknownWords);
-        setCurrentIndex(0);
-      }
+    } else {
+      // 마지막 카드면 완료 상태로 변경
+      setIsCompleted(true);
     }
   };
   
@@ -60,7 +57,7 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
       setWords(fetchedWords);
       setCurrentIndex(0);
       setKnownWords([]);
-      setStudyMode('englishToKorean');
+      setIsCompleted(false);
     }
   };
   
@@ -77,7 +74,7 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
     currentWord,
     currentIndex,
     knownWords,
-    studyMode,
+    isCompleted,
     progressPercent,
     goToNextCard,
     goToPrevCard,
