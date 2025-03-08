@@ -58,7 +58,7 @@ const Header = () => {
         </Link>
       </div>
 
-      <div className="flex-1 max-w-xl mx-4 hidden sm:block">
+      <div className="flex-1 max-w-xl mx-4">
         <div className="relative">
           <input
             type="text"
@@ -83,14 +83,6 @@ const Header = () => {
           )}
         </div>
       </div>
-
-      {/* 모바일에서만 보이는 검색 아이콘 */}
-      <button 
-        className="sm:hidden p-2 rounded-full bg-indigo-50 hover:bg-indigo-100"
-        onClick={() => navigate('/search')}
-      >
-        <Search size={18} className="text-indigo-600" />
-      </button>
 
       <div className="relative" ref={userMenuRef}>
         <button
