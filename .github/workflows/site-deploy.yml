@@ -9,7 +9,7 @@ jobs:
   production-deploy:
     runs-on: ubuntu-latest
 
-    environment: DEPLOY
+    environment: PROD
 
     steps:
     - name: node checkout
