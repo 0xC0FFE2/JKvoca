@@ -4,6 +4,7 @@ export interface Word {
   korean: string;
   example: string;
   pronunciation: string;
+  wordIndex: number;
   difficulty: "EASY" | "MEDIUM" | "HARD";
 }
 

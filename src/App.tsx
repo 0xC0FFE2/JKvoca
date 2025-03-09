@@ -6,6 +6,8 @@ import MemorizePage from "./pages/MemorizePage";
 import VocabularyPage from "./pages/VocabularyPage";
 import OAuthHandler from "./pages/OAuthHandler";
 import VocabManagementPage from "./pages/VocabManagementPage";
+import ClassroomManagementPage from "./pages/ClassroomManagementPage";
+import ClassroomDetail from "./pages/ClassroomDetailPage";
 
 const App = () => {
   return (
@@ -18,6 +20,8 @@ const App = () => {
         <Route path="/memorize/:vocabId" element={<MemorizePage />} />
         <Route path="/oauth_handler" element={<OAuthHandler />} />
         <Route path="/vocab/" element={<VocabManagementPage />} />
+        <Route path="/classroom/" element={<ClassroomManagementPage />} />
+        <Route path="/classroom/:classroomId" element={<ClassroomDetail />} />
       </Routes>
     </BrowserRouter>
   );

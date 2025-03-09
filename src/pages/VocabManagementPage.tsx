@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import Layout from "../layouts/Layout";
-
 import VocabList from "../components/vocab/VocabList";
 import NewVocabForm from "../components/vocab/NewVocabForm";
 import WordList from "../components/vocab/WordList";
 import NewWordForm from "../components/vocab/NewWordForm";
-
+import BulkImportWords from "../components/vocab/BulkImportWords";
 import { 
   fetchAllVocabs, 
   fetchAllWordsByVocabId, 
@@ -16,7 +15,6 @@ import {
   updateWord,
   deleteWord
 } from "../services/AdminVocabService";
-
 import { 
   Vocab, 
   WordType, 
@@ -32,6 +30,7 @@ const VocabManagementPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showNewVocabForm, setShowNewVocabForm] = useState<boolean>(false);
   const [showNewWordForm, setShowNewWordForm] = useState<boolean>(false);
+  const [showBulkImportForm, setShowBulkImportForm] = useState<boolean>(false);
 
   useEffect(() => {
     loadVocabs();
@@ -142,10 +141,8 @@ const VocabManagementPage: React.FC = () => {
       (direction === "up" && currentIndex === 0) || 
       (direction === "down" && currentIndex === words.length - 1)
     ) return;
-
     const adjacentWordIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
     const adjacentWord = words[adjacentWordIndex];
-
     try {
       const updatedWords = [...words];
       const wordToMove: WordType = {...updatedWords[currentIndex]};
@@ -156,7 +153,6 @@ const VocabManagementPage: React.FC = () => {
       updatedWords[currentIndex] = wordToMove;
       
       setWords([...updatedWords].sort((a, b) => a.wordIndex - b.wordIndex));
-
       await updateWord(wordToMove);
       await updateWord(updatedWords[adjacentWordIndex]);
     } catch (err) {
@@ -180,20 +176,17 @@ const VocabManagementPage: React.FC = () => {
             <Plus size={16} className="mr-1" /> 새 단어장 만들기
           </button>
         </div>
-
         {error && (
           <div className="p-4 mb-6 bg-red-100 border border-red-300 text-red-700 rounded-lg">
             {error}
           </div>
         )}
-
         {showNewVocabForm && (
           <NewVocabForm 
             onClose={() => setShowNewVocabForm(false)} 
             onSubmit={handleCreateVocab} 
           />
         )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
             <VocabList 
@@ -204,7 +197,6 @@ const VocabManagementPage: React.FC = () => {
               onDeleteVocab={handleDeleteVocab}
             />
           </div>
-
           <div className="lg:col-span-2">
             {selectedVocab ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -213,22 +205,40 @@ const VocabManagementPage: React.FC = () => {
                     <h2 className="text-xl font-semibold text-gray-800 mb-1">{selectedVocab.vocabName}</h2>
                     <p className="text-gray-600 text-sm">{selectedVocab.vocabDescription}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowNewWordForm(true)}
-                    className="flex items-center py-2 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-                  >
-                    <Plus size={16} className="mr-1" /> 단어 추가
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowNewWordForm(true)}
+                      className="flex items-center py-2 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    >
+                      <Plus size={16} className="mr-1" /> 단어 추가
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowBulkImportForm(true)}
+                      className="flex items-center py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                    >
+                      <Plus size={16} className="mr-1" /> JSON 대량 추가
+                    </button>
+                  </div>
                 </div>
-
                 {showNewWordForm && (
                   <NewWordForm 
                     onClose={() => setShowNewWordForm(false)}
                     onSubmit={handleCreateWord}
                   />
                 )}
-
+                {showBulkImportForm && selectedVocab && (
+                  <BulkImportWords 
+                    vocabId={selectedVocab.vocabId}
+                    onImportComplete={() => {
+                      setShowBulkImportForm(false);
+                      if (selectedVocab) {
+                        loadWords(selectedVocab.vocabId);
+                      }
+                    }}
+                  />
+                )}
                 <WordList 
                   words={words}
                   loading={loading && !!selectedVocab}

@@ -13,7 +13,7 @@ export const ModeSelectionScreen: React.FC<ModeSelectionScreenProps> = ({
   setShowBatchSelection,
 }) => {
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-md p-8 mb-8">
+    <div className="max-w-md mx-auto bg-white rounded-xl p-8 mb-8">
       <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
         학습 모드 선택
       </h2>

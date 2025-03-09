@@ -20,7 +20,7 @@ const BatchSelectionScreen: React.FC<BatchSelectionScreenProps> = ({
           <button
             key={size}
             onClick={() => onSelectBatch(size)}
-            className="flex flex-col items-center p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow"
+            className="flex flex-col items-center p-6 bg-white rounded-xl"
           >
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
               <span className="text-2xl font-bold text-blue-600">{size}</span>

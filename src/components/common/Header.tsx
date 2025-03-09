@@ -176,7 +176,7 @@ const Header = () => {
                     단어장 관리
                   </Link>
                   <Link
-                    to="/class"
+                    to="/classroom/"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
                   >
                     <Users size={16} className="mr-3 text-indigo-500" /> 반 관리
