@@ -7,7 +7,6 @@ import {
   Search,
   User,
   LogOut,
-  Heart,
   ArrowRight,
   LogIn,
   BookOpen,
@@ -33,21 +32,28 @@ const Header = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
   useEffect(() => {
     const accessToken = OAuthSDK.getToken();
-    if (accessToken) {
-      const base64Url = accessToken.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
+    console.log("Access Token:", accessToken);
 
-      const userInfo = JSON.parse(jsonPayload);
-      setUserEmail(userInfo?.email || "");
+    if (accessToken) {
+      fetch("https://auth.nanu.cc/auth/get/email", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+        .then((response) => response.text())
+        .then((data) => {
+          try {
+            setUserEmail(data.trim());
+          } catch (error) {
+            console.error("이메일을 파싱하는 중 오류 발생:", error);
+          }
+        })
+        .catch((error) => {
+          console.error("이메일 요청 중 오류 발생:", error);
+        });
     }
   }, []);
 
@@ -72,7 +78,8 @@ const Header = () => {
   };
 
   const handleLogin = () => {
-    window.location.href = "https://id.nanu.cc/oauth?app_name=jKvoca%20Service&auth_scope=[%22EMAIL%22]&redirect_uri=https://jkvoca.ncloud.sbs/oauth_handler&app_id=78df346b-3feb-459e-8bc7-39ab0a778f38";
+    window.location.href =
+      "https://id.nanu.cc/oauth?app_name=jKvoca%20Service&auth_scope=[%22EMAIL%22]&redirect_uri=https://jkvoca.ncloud.sbs/oauth_handler&app_id=78df346b-3feb-459e-8bc7-39ab0a778f38";
   };
 
   return (
@@ -120,29 +127,34 @@ const Header = () => {
       <div className="relative" ref={userMenuRef}>
         <button
           className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
-            userEmail 
-              ? "bg-indigo-100 hover:bg-indigo-200" 
+            userEmail
+              ? "bg-indigo-100 hover:bg-indigo-200"
               : "bg-white border-2 border-[#4F959D] hover:border-[#4F959D]"
           }`}
           onClick={toggleUserMenu}
         >
-          <User size={18} className={userEmail ? "text-[#4F959D]" : "text-[#4F959D]"} />
+          <User
+            size={18}
+            className={userEmail ? "text-[#4F959D]" : "text-[#4F959D]"}
+          />
         </button>
 
         {isUserMenuOpen && (
           <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 border border-gray-100">
             {userEmail ? (
               <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-sm font-medium text-gray-800">
-                  {userEmail}
-                </p>
+                <p className="text-sm font-medium text-gray-800">{userEmail}</p>
                 <p className="text-xs text-gray-500">회원 정보</p>
               </div>
             ) : (
               <div className="px-4 py-3 border-b border-gray-100">
                 <div className="flex flex-col items-center">
-                  <p className="text-sm text-gray-700 font-medium mb-1">관리자 로그인이 필요합니다</p>
-                  <p className="text-xs text-gray-500 mb-3 text-center">로그인하여 JK용 기능을 이용하세요</p>
+                  <p className="text-sm text-gray-700 font-medium mb-1">
+                    관리자 로그인이 필요합니다
+                  </p>
+                  <p className="text-xs text-gray-500 mb-3 text-center">
+                    로그인하여 JK용 기능을 이용하세요
+                  </p>
                   <button
                     onClick={handleLogin}
                     className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-md flex items-center justify-center transition-colors"
@@ -160,7 +172,8 @@ const Header = () => {
                     to="/vocabulary"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
                   >
-                    <BookOpen size={16} className="mr-3 text-indigo-500" /> 단어장 관리
+                    <BookOpen size={16} className="mr-3 text-indigo-500" />{" "}
+                    단어장 관리
                   </Link>
                   <Link
                     to="/class"
