@@ -13,6 +13,7 @@ export interface VocabInfo {
   vocabCategory: string;
   vocabDescription: string;
   vocabLevel: string;
+  vocabCount : number;
 }
 
 export type StudyMode = "englishToKorean" | "koreanToEnglish";
