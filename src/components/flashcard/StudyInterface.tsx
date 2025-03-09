@@ -44,7 +44,7 @@ const StudyInterface: React.FC<StudyInterfaceProps> = ({
   };
 
   const toggleAnswer = () => {
-    setShowAnswer(!showAnswer);
+    setShowAnswer(true);
   };
 
   const handleNextWord = () => {
@@ -55,6 +55,16 @@ const StudyInterface: React.FC<StudyInterfaceProps> = ({
   const handlePrevWord = () => {
     setShowAnswer(false);
     onPrev();
+  };
+
+  const handleKnown = () => {
+    setShowAnswer(false);
+    onKnown();
+  };
+
+  const handleUnknown = () => {
+    setShowAnswer(false);
+    onUnknown();
   };
 
   return (
@@ -154,7 +164,7 @@ const StudyInterface: React.FC<StudyInterfaceProps> = ({
 
         <div className="flex space-x-4">
           <button
-            onClick={onKnown}
+            onClick={handleKnown}
             className="flex items-center px-6 py-3 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"
           >
             <Check size={20} className="mr-2" />
@@ -162,7 +172,7 @@ const StudyInterface: React.FC<StudyInterfaceProps> = ({
           </button>
 
           <button
-            onClick={onUnknown}
+            onClick={handleUnknown}
             className="flex items-center px-6 py-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
           >
             <SkipForward size={20} className="mr-2" />

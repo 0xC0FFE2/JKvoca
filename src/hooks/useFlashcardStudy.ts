@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Word } from '../types/Types';
-import { getVocabulary } from '../utils/tts';
+import { fetchAndShuffleWords } from '../service/VocabApiService';
 
 interface UseFlashcardStudyProps {
   vocabId: string | undefined;
@@ -14,13 +14,25 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [knownWords, setKnownWords] = useState<number[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    if (vocabId) {
-      const fetchedWords = getVocabulary(vocabId);
-      setWords(fetchedWords);
-      setIsCompleted(false);
-    }
+    const loadWords = async () => {
+      if (vocabId) {
+        setLoading(true);
+        try {
+          const shuffledWords = await fetchAndShuffleWords(vocabId);
+          setWords(shuffledWords);
+          setIsCompleted(false);
+        } catch (error) {
+          console.error("단어 로딩 중 오류:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadWords();
   }, [vocabId]);
   
   const currentWord = words[currentIndex];
@@ -50,13 +62,20 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
     goToNextCard();
   };
   
-  const resetFlashcards = () => {
+  const resetFlashcards = async () => {
     if (vocabId) {
-      const fetchedWords = getVocabulary(vocabId);
-      setWords(fetchedWords);
-      setCurrentIndex(0);
-      setKnownWords([]);
-      setIsCompleted(false);
+      setLoading(true);
+      try {
+        const shuffledWords = await fetchAndShuffleWords(vocabId);
+        setWords(shuffledWords);
+        setCurrentIndex(0);
+        setKnownWords([]);
+        setIsCompleted(false);
+      } catch (error) {
+        console.error("단어 리셋 중 오류:", error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
   
@@ -75,6 +94,7 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
     knownWords,
     isCompleted,
     progressPercent,
+    loading,
     goToNextCard,
     goToPrevCard,
     markAsKnown,
