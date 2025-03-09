@@ -1,12 +1,23 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import OAuthSDK from "nanuid-websdk";
 import logo from "../../assets/logos/logo_RX_BLACK.svg";
 import logoMobile from "../../assets/logos/logo_RR.svg";
-import { Search, User, Settings, LogOut, Heart, ArrowRight } from "lucide-react";
+import {
+  Search,
+  User,
+  LogOut,
+  Heart,
+  ArrowRight,
+  LogIn,
+  BookOpen,
+  Users,
+} from "lucide-react";
 
 const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -21,6 +32,23 @@ const Header = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, []);
+
+  useEffect(() => {
+    const accessToken = OAuthSDK.getToken();
+    if (accessToken) {
+      const base64Url = accessToken.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+
+      const userInfo = JSON.parse(jsonPayload);
+      setUserEmail(userInfo?.email || "");
+    }
   }, []);
 
   const toggleUserMenu = () => {
@@ -39,21 +67,27 @@ const Header = () => {
     }
   };
 
+  const handleLogout = () => {
+    OAuthSDK.logout("/login");
+  };
+
+  const handleLogin = () => {
+    window.location.href = "https://id.nanu.cc/oauth?app_name=jKvoca%20Service&auth_scope=[%22EMAIL%22]&redirect_uri=https://jkvoca.ncloud.sbs/oauth_handler&app_id=78df346b-3feb-459e-8bc7-39ab0a778f38";
+  };
+
   return (
     <header className="w-full border-b border-gray-200 py-3 px-4 flex items-center justify-between bg-white sticky top-0 z-50">
       <div className="flex items-center text-gray-700 font-medium">
         <Link to="/">
-          {/* 데스크톱 로고 - 모바일에서 숨김 */}
-          <img 
-            src={logo} 
-            alt="JKvoca" 
-            className="h-10 cursor-pointer hidden md:block" 
+          <img
+            src={logo}
+            alt="JKvoca"
+            className="h-10 cursor-pointer hidden md:block"
           />
-          {/* 모바일 로고 - 데스크톱에서 숨김 */}
-          <img 
-            src={logoMobile} 
-            alt="JKvoca" 
-            className="h-8 cursor-pointer md:hidden" 
+          <img
+            src={logoMobile}
+            alt="JKvoca"
+            className="h-8 cursor-pointer md:hidden"
           />
         </Link>
       </div>
@@ -72,7 +106,6 @@ const Header = () => {
             size={18}
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black-400"
           />
-          
           {searchTerm && (
             <button
               onClick={handleSearch}
@@ -86,52 +119,68 @@ const Header = () => {
 
       <div className="relative" ref={userMenuRef}>
         <button
-          className="flex items-center justify-center w-9 h-9 bg-indigo-100 rounded-full hover:bg-indigo-200 transition-colors"
+          className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
+            userEmail 
+              ? "bg-indigo-100 hover:bg-indigo-200" 
+              : "bg-white border-2 border-[#4F959D] hover:border-[#4F959D]"
+          }`}
           onClick={toggleUserMenu}
         >
-          <User size={18} className="text-indigo-600" />
+          <User size={18} className={userEmail ? "text-[#4F959D]" : "text-[#4F959D]"} />
         </button>
 
         {isUserMenuOpen && (
           <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 border border-gray-100">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-sm font-medium text-gray-800">김스타픽</p>
-              <p className="text-xs text-gray-500">starpick@example.com</p>
-            </div>
+            {userEmail ? (
+              <div className="px-4 py-3 border-b border-gray-100">
+                <p className="text-sm font-medium text-gray-800">
+                  {userEmail}
+                </p>
+                <p className="text-xs text-gray-500">회원 정보</p>
+              </div>
+            ) : (
+              <div className="px-4 py-3 border-b border-gray-100">
+                <div className="flex flex-col items-center">
+                  <p className="text-sm text-gray-700 font-medium mb-1">관리자 로그인이 필요합니다</p>
+                  <p className="text-xs text-gray-500 mb-3 text-center">로그인하여 JK용 기능을 이용하세요</p>
+                  <button
+                    onClick={handleLogin}
+                    className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-md flex items-center justify-center transition-colors"
+                  >
+                    <LogIn size={16} className="mr-2" /> 로그인하여 계속하기
+                  </button>
+                </div>
+              </div>
+            )}
 
-            <div className="py-1">
-              <a
-                href="#profile"
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-              >
-                <User size={16} className="mr-3 text-indigo-500" />
-                프로필
-              </a>
-              <a
-                href="#favorites"
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-              >
-                <Heart size={16} className="mr-3 text-indigo-500" />
-                관심 그룹
-              </a>
-              <a
-                href="#settings"
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-              >
-                <Settings size={16} className="mr-3 text-indigo-500" />
-                회원정보 관리
-              </a>
-            </div>
+            {userEmail && (
+              <>
+                <div className="py-1">
+                  <Link
+                    to="/vocabulary"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                  >
+                    <BookOpen size={16} className="mr-3 text-indigo-500" /> 단어장 관리
+                  </Link>
+                  <Link
+                    to="/class"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
+                  >
+                    <Users size={16} className="mr-3 text-indigo-500" /> 반 관리
+                  </Link>
+                </div>
 
-            <div className="py-1 border-t border-gray-100">
-              <a
-                href="#logout"
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
-              >
-                <LogOut size={16} className="mr-3 text-indigo-500" />
-                로그아웃
-              </a>
-            </div>
+                <div className="py-1 border-t border-gray-100">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 w-full text-left"
+                  >
+                    <LogOut size={16} className="mr-3 text-indigo-500" />{" "}
+                    로그아웃
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
