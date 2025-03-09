@@ -1,19 +1,3 @@
-import { Word } from "../types/Types";
-
-export const getVocabulary = (id: string): Word[] => {
-  return Array(50)
-    .fill(null)
-    .map((_, index) => ({
-      id: index + 1,
-      english: `Word ${index + 1}`,
-      korean: `단어 ${index + 1}`,
-      example: `This is an example sentence using Word ${index + 1}.`,
-      pronunciation: `/wɜːrd ${index + 1}/`,
-      difficulty:
-        index % 3 === 0 ? "easy" : index % 3 === 1 ? "medium" : "hard",
-    }));
-};
-
 export const speakWord = (text: string, language: string = "en-US"): void => {
   if ("speechSynthesis" in window) {
     const utterance = new SpeechSynthesisUtterance(text);
