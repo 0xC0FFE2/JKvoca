@@ -5,7 +5,7 @@ import { ModeSelectionScreen } from "../components/memorize/ModeSelectionScreen"
 import { StudyInterface } from "../components/memorize/StudyInterface";
 import { useWordStudy } from "../hooks/useWordStudy";
 import { Word, StudyMode } from "../types/Types";
-import { fetchAllWords } from "../service/VocabApiService";
+import { fetchAllWords } from "../services/VocabApiService";
 import { BatchSelectionScreen } from "../components/memorize/BatchSelectionScreen";
 
 const MemorizePage: React.FC = () => {

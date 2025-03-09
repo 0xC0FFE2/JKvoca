@@ -5,6 +5,7 @@ import FlashcardPage from "./pages/FlashcardPage";
 import MemorizePage from "./pages/MemorizePage";
 import VocabularyPage from "./pages/VocabularyPage";
 import OAuthHandler from "./pages/OAuthHandler";
+import VocabManagementPage from "./pages/VocabManagementPage";
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
         <Route path="/flashcard/:vocabId" element={<FlashcardPage />} />
         <Route path="/memorize/:vocabId" element={<MemorizePage />} />
         <Route path="/oauth_handler" element={<OAuthHandler />} />
+        <Route path="/vocab/" element={<VocabManagementPage />} />
       </Routes>
     </BrowserRouter>
   );

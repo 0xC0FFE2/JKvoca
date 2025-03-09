@@ -169,7 +169,7 @@ const Header = () => {
               <>
                 <div className="py-1">
                   <Link
-                    to="/vocabulary"
+                    to="/vocab/"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50"
                   >
                     <BookOpen size={16} className="mr-3 text-indigo-500" />{" "}

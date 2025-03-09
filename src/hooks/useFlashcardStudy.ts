@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Word } from '../types/Types';
-import { fetchAndShuffleWords } from '../service/VocabApiService';
+import { fetchAndShuffleWords } from '../services/VocabApiService';
 
 interface UseFlashcardStudyProps {
   vocabId: string | undefined;

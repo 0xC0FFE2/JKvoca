@@ -12,7 +12,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { speakWord } from "../utils/tts";
-import { fetchVocabInfo, fetchWords } from "../service/VocabApiService";
+import { fetchVocabInfo, fetchWords } from "../services/VocabApiService";
 import { Word } from "../types/Types";
 import { getBookmarkedWords, toggleWordBookmark, isWordBookmarked } from "../utils/utils";
 
