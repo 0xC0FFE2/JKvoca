@@ -5,7 +5,7 @@ import { ModeSelectionScreen } from "../components/memorize/ModeSelectionScreen"
 import { StudyInterface } from "../components/memorize/StudyInterface";
 import { useWordStudy } from "../hooks/useWordStudy";
 import { Word, StudyMode } from "../types/Types";
-import { getVocabulary } from "../utils/tts";
+import { fetchAllWords } from "../service/VocabApiService";
 import { BatchSelectionScreen } from "../components/memorize/BatchSelectionScreen";
 
 const MemorizePage: React.FC = () => {
@@ -13,25 +13,58 @@ const MemorizePage: React.FC = () => {
   const navigate = useNavigate();
 
   const [words, setWords] = useState<Word[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [studyMode, setStudyMode] = useState<StudyMode>("englishToKorean");
   const [showModeSelection, setShowModeSelection] = useState(true);
   const [showBatchSelection, setShowBatchSelection] = useState(false);
   const [selectedBatchSize, setSelectedBatchSize] = useState(5);
 
+  // API를 통해 모든 단어 목록 한 번에 불러오기
   useEffect(() => {
-    if (vocabId) {
-      const fetchedWords = getVocabulary(vocabId);
-      setWords(fetchedWords);
-    }
+    const loadAllWords = async () => {
+      if (!vocabId) return;
+      
+      setLoading(true);
+      setError(null);
+
+      try {
+        // 모든 단어를 한 번에 가져오는 API 호출
+        const allWords = await fetchAllWords(vocabId);
+        
+        // 단어 목록을 랜덤으로 섞기
+        const shuffledWords = shuffleArray([...allWords]);
+        setWords(shuffledWords);
+      } catch (err) {
+        console.error("단어 목록을 불러오는 중 오류가 발생했습니다:", err);
+        setError("단어 목록을 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAllWords();
   }, [vocabId]);
+
+  // 배열을 랜덤하게 섞는 함수
+  const shuffleArray = (array: any[]) => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  };
 
   const studyHook = useWordStudy(
     !showModeSelection && !showBatchSelection ? words : [],
-    selectedBatchSize
+    selectedBatchSize,
+    studyMode
   );
 
   const { currentWord, userInputs, setUserInputs } = studyHook;
 
+  // 글자 입력 칸 초기화
   useEffect(() => {
     if (currentWord) {
       const targetWord =
@@ -39,7 +72,7 @@ const MemorizePage: React.FC = () => {
           ? currentWord.korean
           : currentWord.english;
 
-      if (userInputs.length !== targetWord.length) {
+      if (targetWord && userInputs.length !== targetWord.length) {
         const newInputs = Array(targetWord.length)
           .fill("")
           .map((_, index) => (targetWord[index] === " " ? " " : ""));
@@ -62,9 +95,40 @@ const MemorizePage: React.FC = () => {
     navigate(`/vocabulary/${vocabId}`);
   };
 
-  const saveProgress = () => {
-    alert("진행 상황이 저장되었습니다.");
+  const adaptedStudyHook = {
+    ...studyHook,
+    completedWords: studyHook.incorrectWords.map(id => 
+      typeof id === 'string' ? parseInt(id, 10) : id
+    ).filter(id => !isNaN(id))
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="max-w-5xl mx-auto px-4 py-8 flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <p>{error}</p>
+            <button
+              className="mt-2 px-4 py-2 bg-red-100 text-red-800 rounded hover:bg-red-200"
+              onClick={() => window.location.reload()}
+            >
+              다시 시도
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -92,8 +156,7 @@ const MemorizePage: React.FC = () => {
             toggleStudyMode={toggleStudyMode}
             setShowModeSelection={setShowModeSelection}
             exitMemorizeMode={exitMemorizeMode}
-            saveProgress={saveProgress}
-            studyHook={studyHook}
+            studyHook={adaptedStudyHook as any}
           />
         )}
       </div>

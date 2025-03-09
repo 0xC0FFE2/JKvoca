@@ -1,12 +1,20 @@
 export interface Word {
-    id: number;
-    english: string;
-    korean: string;
-    example: string;
-    pronunciation: string;
-    difficulty: "easy" | "medium" | "hard";
-  }
-  
-  export type StudyMode = "englishToKorean" | "koreanToEnglish";
+  id: number;
+  english: string;
+  korean: string;
+  example: string;
+  pronunciation: string;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+}
 
-  export type FlashcardMode = 'flashcard' | 'review';
+export interface VocabInfo {
+  vocabId: string;
+  vocabName: string;
+  vocabCategory: string;
+  vocabDescription: string;
+  vocabLevel: string;
+}
+
+export type StudyMode = "englishToKorean" | "koreanToEnglish";
+
+export type FlashcardMode = "flashcard" | "review";
