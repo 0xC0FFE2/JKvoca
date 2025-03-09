@@ -14,7 +14,7 @@ import {
 import { speakWord } from "../utils/tts";
 import { fetchVocabInfo, fetchWords } from "../service/VocabApiService";
 import { Word } from "../types/Types";
-import { getBookmarkedWords, toggleWordBookmark } from "../utils/utils";
+import { getBookmarkedWords, toggleWordBookmark, isWordBookmarked } from "../utils/utils";
 
 const VocabularyPage: React.FC = () => {
   const { vocabId } = useParams<{ vocabId: string }>();
@@ -23,7 +23,7 @@ const VocabularyPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [wordsPerPage, setWordsPerPage] = useState<number>(24);
   const [expandedWordId, setExpandedWordId] = useState<number | null>(null);
-  const [bookmarkedWords, setBookmarkedWords] = useState<number[]>([]);
+  const [bookmarkedWords, setBookmarkedWords] = useState<{[key: string]: boolean}>({});
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [playingWordId, setPlayingWordId] = useState<number | null>(null);
 
@@ -49,9 +49,8 @@ const VocabularyPage: React.FC = () => {
 
   useEffect(() => {
     const savedBookmarks = getBookmarkedWords();
-    const currentVocabBookmarks = savedBookmarks[id] || [];
-    setBookmarkedWords(currentVocabBookmarks);
-  }, [id]);
+    setBookmarkedWords(savedBookmarks);
+  }, []);
 
   useEffect(() => {
     const loadData = async (): Promise<void> => {
@@ -109,12 +108,10 @@ const VocabularyPage: React.FC = () => {
     setExpandedWordId(expandedWordId === id ? null : id);
   };
 
-  const handleToggleBookmark = (id: number, event: React.MouseEvent): void => {
+  const handleToggleBookmark = (word: Word, event: React.MouseEvent): void => {
     event.stopPropagation();
-
-    if (!vocabId) return; 
-
-    const updatedBookmarks = toggleWordBookmark(vocabId, id);
+    
+    const updatedBookmarks = toggleWordBookmark(word.english);
     setBookmarkedWords(updatedBookmarks);
   };
 
@@ -208,11 +205,11 @@ const VocabularyPage: React.FC = () => {
                   </span>
                 </div>
 
-                {bookmarkedWords.length > 0 && (
+                {Object.keys(bookmarkedWords).length > 0 && (
                   <div className="flex items-center">
                     <Star size={16} className="text-yellow-500 mr-2" />
                     <span className="text-sm text-gray-700">
-                      북마크: {bookmarkedWords.length}개
+                      북마크: {Object.keys(bookmarkedWords).length}개
                     </span>
                   </div>
                 )}
@@ -296,11 +293,11 @@ const VocabularyPage: React.FC = () => {
                   </span>
                 </div>
 
-                {bookmarkedWords.length > 0 && (
+                {Object.keys(bookmarkedWords).length > 0 && (
                   <div className="flex items-center px-3 py-1 bg-yellow-50 rounded">
                     <Star size={14} className="text-yellow-500 mr-1" />
                     <span className="text-xs font-medium text-gray-700">
-                      {bookmarkedWords.length}개
+                      {Object.keys(bookmarkedWords).length}개
                     </span>
                   </div>
                 )}
@@ -376,16 +373,16 @@ const VocabularyPage: React.FC = () => {
                         <div className="flex items-start">
                           <button
                             className={`focus:outline-none ${
-                              bookmarkedWords.includes(word.id)
+                              bookmarkedWords[word.english]
                                 ? "text-yellow-500"
                                 : "text-gray-300 hover:text-yellow-500"
                             }`}
-                            onClick={(e) => handleToggleBookmark(word.id, e)}
+                            onClick={(e) => handleToggleBookmark(word, e)}
                           >
                             <Star
                               size={16}
                               fill={
-                                bookmarkedWords.includes(word.id)
+                                bookmarkedWords[word.english]
                                   ? "currentColor"
                                   : "none"
                               }
@@ -502,16 +499,16 @@ const VocabularyPage: React.FC = () => {
                           <td className="px-4 py-2.5">
                             <button
                               className={`focus:outline-none ${
-                                bookmarkedWords.includes(word.id)
+                                bookmarkedWords[word.english]
                                   ? "text-yellow-500"
                                   : "text-gray-300 hover:text-yellow-500"
                               }`}
-                              onClick={(e) => handleToggleBookmark(word.id, e)}
+                              onClick={(e) => handleToggleBookmark(word, e)}
                             >
                               <Star
                                 size={16}
                                 fill={
-                                  bookmarkedWords.includes(word.id)
+                                  bookmarkedWords[word.english]
                                     ? "currentColor"
                                     : "none"
                                 }

@@ -1,5 +1,5 @@
 type BookmarkMap = {
-  [vocabId: string]: number[];
+  [englishWord: string]: boolean;
 };
 
 export const setCookie = (
@@ -41,37 +41,26 @@ export const getBookmarkedWords = (): BookmarkMap => {
   return getCookie("bookmarkedWords") || {};
 };
 
-export const saveBookmarkedWords = (
-  vocabId: string,
-  wordIds: number[]
-): void => {
+export const toggleWordBookmark = (englishWord: string): BookmarkMap => {
   const bookmarks = getBookmarkedWords();
-  bookmarks[vocabId] = wordIds;
-  setCookie("bookmarkedWords", bookmarks);
-};
 
-export const toggleWordBookmark = (
-  vocabId: string,
-  wordId: number
-): number[] => {
-  const bookmarks = getBookmarkedWords();
-  const currentVocabBookmarks = bookmarks[vocabId] || [];
-
-  let newVocabBookmarks: number[];
-  if (currentVocabBookmarks.includes(wordId)) {
-    newVocabBookmarks = currentVocabBookmarks.filter((id) => id !== wordId);
+  if (bookmarks[englishWord]) {
+    delete bookmarks[englishWord];
   } else {
-    newVocabBookmarks = [...currentVocabBookmarks, wordId];
+    bookmarks[englishWord] = true;
   }
 
-  bookmarks[vocabId] = newVocabBookmarks;
   setCookie("bookmarkedWords", bookmarks);
-
-  return newVocabBookmarks;
+  return bookmarks;
 };
 
-export const isWordBookmarked = (vocabId: string, wordId: number): boolean => {
+export const isWordBookmarked = (englishWord: string): boolean => {
   const bookmarks = getBookmarkedWords();
-  const currentVocabBookmarks = bookmarks[vocabId] || [];
-  return currentVocabBookmarks.includes(wordId);
+  return !!bookmarks[englishWord];
+};
+
+// 북마크된 단어 목록 가져오기 (단어 문자열 배열)
+export const getBookmarkedWordsList = (): string[] => {
+  const bookmarks = getBookmarkedWords();
+  return Object.keys(bookmarks).filter((word) => bookmarks[word]);
 };
