@@ -29,11 +29,6 @@ const ServiceIntroduction: React.FC = () => {
               <br />
               영어 실력을 더 높여드립니다 ㅇㅅㅇ
             </p>
-            <div className="flex flex-wrap gap-4">
-              <button className="bg-blue-500 text-white px-6 py-3 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors">
-                로그인하여 시작하기
-              </button>
-            </div>
           </div>
 
           <div className="mt-12 relative">
