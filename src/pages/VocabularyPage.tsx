@@ -28,8 +28,8 @@ const VocabularyPage: React.FC = () => {
   const [playingWordId, setPlayingWordId] = useState<number | null>(null);
 
   const [words, setWords] = useState<Word[]>([]);
-  const [totalWords, setTotalWords] = useState<number>(0); // 총 단어 수
-  const [totalPages, setTotalPages] = useState<number>(0); // 총 페이지 수
+  const [totalWords, setTotalWords] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
   const [info, setInfo] = useState<{
     title: string;
     description: string;
@@ -61,11 +61,11 @@ const VocabularyPage: React.FC = () => {
       try {
         const vocabInfo = await fetchVocabInfo(id);
         setInfo({
-          title: vocabInfo.vocabName,
-          description: vocabInfo.vocabDescription,
-          level: vocabInfo.vocabLevel,
-          category: vocabInfo.vocabCategory,
-          count: vocabInfo.vocabCount,
+          title: vocabInfo.vocabName || "단어장",
+          description: vocabInfo.vocabDescription || "설명 없음",
+          level: vocabInfo.vocabLevel || "미정",
+          category: vocabInfo.vocabCategory || "기타",
+          count: vocabInfo.vocabCount || 0,
         });
       } catch (err) {
         setError("단어장 정보를 불러오는 중 오류가 발생했습니다.");
@@ -78,24 +78,17 @@ const VocabularyPage: React.FC = () => {
     loadData();
   }, [id]);
 
-  // 페이지 변경 시 단어 목록 불러오기
   useEffect(() => {
     const loadWords = async (): Promise<void> => {
       setLoading(true);
       try {
-        // 페이지네이션 API 호출
         const response = await fetchWords(id, currentPage, wordsPerPage);
 
-        // 단어 목록과 페이지네이션 정보 업데이트
         setWords(response.content);
         setTotalWords(response.totalElements);
         setTotalPages(response.totalPages);
-
-        // 정보 업데이트 (단어 수)
-        setInfo((prev) => ({
-          ...prev,
-          count: response.totalElements,
-        }));
+        
+        // count 값을 덮어쓰지 않도록 제거
       } catch (err) {
         setError("단어 목록을 불러오는 중 오류가 발생했습니다.");
         console.error(err);
@@ -356,7 +349,6 @@ const VocabularyPage: React.FC = () => {
                 단어가 없습니다.
               </div>
             ) : viewMode === "grid" ? (
-              // 그리드 뷰
               <div className={`grid ${getGridCols()} gap-4 mb-6`}>
                 {words.map((word) => (
                   <div

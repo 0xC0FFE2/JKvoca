@@ -85,7 +85,7 @@ export const fetchVocabInfo = async (vocabId: string): Promise<VocabInfo> => {
       vocabDescription:
         data.vocabDescription || "단어장 정보를 불러올 수 없습니다.",
       vocabLevel: data.vocabLevel || "미정",
-      vocabCount: data.vocabCount || 0,
+      vocabCount: data.wordCount || 0,
     };
   } catch (error) {
     console.error("단어장 정보를 불러오는 중 오류가 발생했습니다:", error);
@@ -96,7 +96,7 @@ export const fetchVocabInfo = async (vocabId: string): Promise<VocabInfo> => {
       vocabCategory: "기타",
       vocabDescription: "단어장 정보를 불러올 수 없습니다.",
       vocabLevel: "미정",
-      vocabCount: 0
+      vocabCount: 0,
     };
   }
 };
