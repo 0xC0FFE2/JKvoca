@@ -13,9 +13,6 @@ export const speakWord = (text: string, language: string = "en-US"): void => {
     window.speechSynthesis.speak(utterance);
   } else {
     console.error("브라우저가 음성 합성을 지원하지 않습니다");
-    alert(
-      "음성 합성 기능을 사용할 수 없습니다. 브라우저를 업데이트하거나 다른 브라우저를 사용해 주세요."
-    );
   }
 };
 
