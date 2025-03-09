@@ -17,7 +17,7 @@ const ServiceIntroduction: React.FC = () => {
 
   return (
     <Layout>
-      <section className="pt-20 pb-16">
+      <section className="pt-12 pb-16">
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-2xl">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-[#205781] to-[#4F959D] text-transparent bg-clip-text tracking-tight mb-6">
