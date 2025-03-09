@@ -12,6 +12,7 @@ import {
   BookOpen,
   Users,
 } from "lucide-react";
+import { getValidToken } from "../../utils/auth";
 
 const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -33,28 +34,27 @@ const Header = () => {
     };
   }, []);
   useEffect(() => {
-    const accessToken = OAuthSDK.getToken();
-    console.log("Access Token:", accessToken);
+    const fetchUserEmail = async () => {
+      const accessToken = await getValidToken();
 
-    if (accessToken) {
-      fetch("https://auth.nanu.cc/auth/get/email", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-        .then((response) => response.text())
-        .then((data) => {
-          try {
-            setUserEmail(data.trim());
-          } catch (error) {
-            console.error("이메일을 파싱하는 중 오류 발생:", error);
-          }
-        })
-        .catch((error) => {
+      if (accessToken) {
+        try {
+          const response = await fetch("https://auth.nanu.cc/auth/get/email", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          const data = await response.text();
+          setUserEmail(data.trim());
+        } catch (error) {
           console.error("이메일 요청 중 오류 발생:", error);
-        });
-    }
+        }
+      }
+    };
+
+    fetchUserEmail();
   }, []);
 
   const toggleUserMenu = () => {
