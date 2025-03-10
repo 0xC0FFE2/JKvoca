@@ -90,7 +90,7 @@ const ServiceIntroduction: React.FC = () => {
       <Layout>
         <div className="max-w-7xl mx-auto px-6 py-12">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-[#205781] to-[#4F959D] text-transparent bg-clip-text tracking-tight mb-6">
-            진경썜최고
+            진경쌤최고ㅇㅅㅇ
           </h1>
 
           <div className="mb-8">
@@ -200,7 +200,7 @@ const ServiceIntroduction: React.FC = () => {
                         </div>
                         <div className="flex space-x-2">
                           <button 
-                            onClick={() => navigate(`/admin/vocab/${vocab.vocabId}`)}
+                            onClick={() => navigate(`/vocab/`)}
                             className="bg-blue-50 text-blue-600 py-1 px-3 rounded text-sm flex items-center"
                           >
                             <BookOpen size={14} className="mr-1" />
