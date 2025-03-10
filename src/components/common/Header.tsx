@@ -40,7 +40,6 @@ const Header = () => {
   
   useEffect(() => {
     const fetchUserEmail = async () => {
-      // 이미 로컬 스토리지에 이메일이 있으면 API 요청 안함
       if (localStorage.getItem(USER_EMAIL_KEY)) {
         return;
       }
@@ -71,7 +70,7 @@ const Header = () => {
     };
 
     fetchUserEmail();
-  }, []); // 컴포넌트 마운트 시 한 번만 실행
+  }, []);
 
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
@@ -90,10 +89,9 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    // 로그아웃 시 로컬 스토리지에서 이메일 제거
     localStorage.removeItem(USER_EMAIL_KEY);
     setUserEmail(null);
-    OAuthSDK.logout("/login");
+    OAuthSDK.logout("/");
   };
 
   const handleLogin = () => {
