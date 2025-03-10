@@ -90,7 +90,7 @@ const ServiceIntroduction: React.FC = () => {
       <Layout>
         <div className="max-w-7xl mx-auto px-6 py-12">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-[#205781] to-[#4F959D] text-transparent bg-clip-text tracking-tight mb-6">
-            관리자 대시보드
+            진경썜최고
           </h1>
 
           <div className="mb-8">
@@ -118,7 +118,7 @@ const ServiceIntroduction: React.FC = () => {
                   반 목록
                 </h2>
                 <button 
-                  onClick={() => navigate('/admin/classroom/create')} 
+                  onClick={() => navigate('/classroom/')} 
                   className="bg-blue-500 text-white py-2 px-4 rounded-lg text-sm flex items-center"
                 >
                   <Plus size={16} className="mr-1" />
@@ -142,7 +142,7 @@ const ServiceIntroduction: React.FC = () => {
                         </div>
                         <div className="flex space-x-2">
                           <button 
-                            onClick={() => navigate(`/admin/classroom/${classroom.classroomId}`)}
+                            onClick={() => navigate(`/classroom/${classroom.classroomId}`)}
                             className="bg-blue-50 text-blue-600 py-1 px-3 rounded text-sm flex items-center"
                           >
                             <School size={14} className="mr-1" />
@@ -176,7 +176,7 @@ const ServiceIntroduction: React.FC = () => {
                   단어장 목록
                 </h2>
                 <button 
-                  onClick={() => navigate('/admin/vocab/create')} 
+                  onClick={() => navigate('/vocab/')} 
                   className="bg-blue-500 text-white py-2 px-4 rounded-lg text-sm flex items-center"
                 >
                   <Plus size={16} className="mr-1" />
