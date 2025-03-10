@@ -231,7 +231,6 @@ const VocabularyPage: React.FC = () => {
     try {
       const success = await classroomService.moveToNextTest(classroomId);
       if (success) {
-        // 페이지 새로고침으로 데이터 갱신
         window.location.reload();
       }
     } catch (error) {

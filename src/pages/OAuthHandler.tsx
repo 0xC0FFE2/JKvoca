@@ -28,7 +28,7 @@ const OAuthHandler: React.FC = () => {
         OAuthSDK.setTokens(access_token, refresh_token);
         
         setIsLoading(false);
-        navigate("/admin");
+        navigate("/");
       } catch (error) {
         console.error("OAuth 처리 중 오류 발생:", error);
         setError("인증 처리 중 오류가 발생했습니다");

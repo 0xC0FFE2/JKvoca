@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../layouts/Layout";
-import { ArrowLeft, BookOpen, Book, Edit, Trash2, Save, X, Check } from "lucide-react";
+import { ArrowLeft, BookOpen, Book, Edit, Trash2, Save, X, Check, Copy, Link } from "lucide-react";
 import classroomService, { Classroom, Word } from "../services/AdminClassroomService";
 import { fetchApiVocabInfo } from "../services/VocabApiService";
 
@@ -19,6 +19,7 @@ const ClassroomDetail: React.FC = () => {
   const [vocabList, setVocabList] = useState<any[]>([]);
   const [vocabInfo, setVocabInfo] = useState<any>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+  const [linkCopied, setLinkCopied] = useState<boolean>(false);
 
   useEffect(() => {
     if (classroomId) {
@@ -95,7 +96,6 @@ const ClassroomDetail: React.FC = () => {
       });
     }
     
-    // 단어장을 변경했을 때 해당 단어장 정보를 가져옵니다
     if (name === "studyingVocabId" && value) {
       fetchVocabInfo(value);
     }
@@ -105,11 +105,10 @@ const ClassroomDetail: React.FC = () => {
     if (!editedClassroom || !classroom) return;
     
     try {
-      // 기존 lastVocaId 값을 유지
       await classroomService.updateClassroom(classroomId as string, {
         classroomName: editedClassroom.classroomName,
         studyingVocabId: editedClassroom.studyingVocabId,
-        lastVocaId: classroom.lastVocaId, // 기존 값 사용
+        lastVocaId: classroom.lastVocaId,
         testCount: editedClassroom.testCount
       });
       
@@ -120,7 +119,7 @@ const ClassroomDetail: React.FC = () => {
         testCount: editedClassroom.testCount
       });
       setIsEditing(false);
-      fetchClassroomInfo(); // 업데이트된 정보 가져오기
+      fetchClassroomInfo();
     } catch (err) {
       setError("반 정보 수정에 실패했습니다.");
       console.error("Error updating classroom:", err);
@@ -148,6 +147,22 @@ const ClassroomDetail: React.FC = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+  
+  const getExamLink = () => {
+    return `https://jkvoca.ncloud.sbs/vocabulary/${classroomId}?ec=true`;
+  };
+  
+  const copyExamLink = () => {
+    const examLink = getExamLink();
+    navigator.clipboard.writeText(examLink)
+      .then(() => {
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 3000);
+      })
+      .catch(err => {
+        console.error('Failed to copy link:', err);
+      });
   };
 
   if (isLoading) {
@@ -297,6 +312,36 @@ const ClassroomDetail: React.FC = () => {
           <div className="p-6">
             {activeTab === "overview" ? (
               <div className="space-y-6">
+                {/* 시험 링크 섹션 추가 */}
+                <div className="bg-purple-50 p-6 rounded-lg">
+                  <h3 className="text-sm font-medium text-purple-700 mb-2">시험 링크</h3>
+                  <div className="flex items-center">
+                    <div className="flex-1 bg-white border border-gray-300 rounded-l-lg p-3 overflow-x-auto">
+                      <div className="flex items-center">
+                        <Link size={16} className="text-purple-500 mr-2 flex-shrink-0" />
+                        <span className="text-gray-700 whitespace-nowrap">{getExamLink()}</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={copyExamLink} 
+                      className={`flex items-center justify-center ${linkCopied ? 'bg-green-600' : 'bg-purple-600'} text-white p-3 rounded-r-lg h-full transition-colors`}
+                    >
+                      {linkCopied ? (
+                        <>
+                          <Check size={16} className="mr-2" />
+                          복사됨
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={16} className="mr-2" />
+                          복사하기
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-sm text-purple-600 mt-2">이 링크를 학생들에게 공유하면 시험에 참여할 수 있습니다.</p>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="bg-blue-50 p-6 rounded-lg">
                     <h3 className="text-sm font-medium text-blue-700 mb-2">단어장</h3>
@@ -355,7 +400,6 @@ const ClassroomDetail: React.FC = () => {
                   <div className="bg-gray-50 p-4 rounded-lg">
                     {words.length > 0 ? (
                       <div>
-                        {/* Simple visualization of difficulty distribution */}
                         <div className="flex h-8 w-full rounded-md overflow-hidden">
                           {(() => {
                             const difficulties = words.map(w => w.difficulty);
