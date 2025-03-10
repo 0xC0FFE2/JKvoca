@@ -31,7 +31,7 @@ instance.interceptors.response.use(
   },
   (error: AxiosError) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-     // OAuthSDK.logout("/");
+      OAuthSDK.logout("/");
     }
     return Promise.reject(error);
   }

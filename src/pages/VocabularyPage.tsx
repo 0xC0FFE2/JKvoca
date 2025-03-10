@@ -24,14 +24,16 @@ import {
   fetchVocabInfo,
   fetchWords,
   fetchExamWords,
+  getClassroomById,
 } from "../services/VocabApiService";
-import classroomService from "../services/AdminClassroomService";
+
 import { Word } from "../types/Types";
 import {
   getBookmarkedWords,
   toggleWordBookmark,
   getCookie,
 } from "../utils/utils";
+import classroomService from "../services/AdminClassroomService";
 
 const speakExample = (text: string, lang: string): void => {
   const utterance = new SpeechSynthesisUtterance(text);
@@ -113,8 +115,7 @@ const VocabularyPage: React.FC = () => {
 
       try {
         if (isExamMode) {
-          // 시험 모드일 경우 교실 정보 로드
-          const classroom = await classroomService.getClassroomById(classroomId);
+          const classroom = await getClassroomById(classroomId);
           setClassroomInfo({
             classroomId: classroom.classroomId,
             classroomName: classroom.classroomName,
@@ -122,7 +123,6 @@ const VocabularyPage: React.FC = () => {
             testCount: classroom.testCount,
           });
 
-          // 원본 단어장 정보도 로드
           if (classroom.studyingVocabId) {
             const vocabInfo = await fetchVocabInfo(classroom.studyingVocabId);
             setInfo({
@@ -134,7 +134,6 @@ const VocabularyPage: React.FC = () => {
             });
           }
         } else {
-          // 일반 단어장 모드
           const vocabInfo = await fetchVocabInfo(id);
           setInfo({
             title: vocabInfo.vocabName || "단어장",

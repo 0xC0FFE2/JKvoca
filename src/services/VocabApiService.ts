@@ -11,6 +11,14 @@ export interface WordPageResponse {
   last: boolean;
 }
 
+export interface Classroom {
+  classroomId: string;
+  classroomName: string;
+  studyingVocabId: string;
+  lastVocaId: number;
+  testCount: number;
+}
+
 export const fetchWords = async (
   vocabId: string,
   page: number = 0,
@@ -159,6 +167,13 @@ export const fetchApiVocabInfo = async (
       vocabCount: 0,
     };
   }
+};
+
+export const getClassroomById = async (classroomId: string): Promise<Classroom> => {
+  const response = await instance.get<Classroom>(
+    `/v2/classroom/info/${classroomId}`
+  );
+  return response.data;
 };
 
 export const fetchAllWords = async (vocabId: string): Promise<Word[]> => {
