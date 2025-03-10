@@ -3,7 +3,7 @@ import { OAuthSDK } from "nanuid-websdk";
 import { getValidToken } from "./auth";
 
 const instance: AxiosInstance = axios.create({
-  baseURL: "http://localhost:8080/",
+  baseURL: "https://jkvoca-api.ncloud.sbs/",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
