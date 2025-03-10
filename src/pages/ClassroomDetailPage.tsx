@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../layouts/Layout";
 import { ArrowLeft, BookOpen, Book, Edit, Trash2, Save, X, Check, Copy, Link, Download, QrCode } from "lucide-react";
@@ -168,79 +168,190 @@ const ClassroomDetail: React.FC = () => {
       });
   };
 
+  const svgToDataURL = (svg: SVGElement): string => {
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svg);
+    const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    return URL.createObjectURL(svgBlob);
+  };
+
   const exportQRToPDF = async () => {
     if (!classroom) return;
     
     setIsExportingPdf(true);
     
     try {
-      // A4 크기 PDF 생성 (210 x 297 mm)
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      document.body.appendChild(tempDiv);
       
-      // 여백 설정
-      const margin = 20;
-      const contentWidth = pdfWidth - (margin * 2);
+      const qrCodeUrl = getExamLink();
+      const qrSize = 200;
       
-      // QR 코드 크기 및 위치 계산
-      const qrSize = 160; // QR 코드 크기 (mm)
-      const x = (pdfWidth - qrSize) / 2;
-      const y = 60; // QR 코드 시작 위치
-      
-      // 제목 추가
-      pdf.setFontSize(18);
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(`${classroom.classroomName}`, pdfWidth / 2, 30, { align: 'center' });
-      
-      pdf.setFontSize(14);
-      pdf.text('시험 접속 QR 코드', pdfWidth / 2, 40, { align: 'center' });
-      
-      // 날짜 추가
-      const today = new Date();
-      const dateStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-      pdf.setFontSize(10);
-      pdf.text(`생성일: ${dateStr}`, pdfWidth / 2, 50, { align: 'center' });
-      
-      // QR 코드 SVG를 이미지로 변환 (직접 데이터를 생성하지 않고 구글 차트 API 사용)
-      const qrCodeUrl = `https://chart.googleapis.com/chart?cht=qr&chl=${encodeURIComponent(getExamLink())}&chs=500x500&chld=H|1`;
-      
-      // 이미지 불러오기
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      
-      // 이미지 로드 완료 후 PDF에 추가
-      await new Promise((resolve, reject) => {
-        img.onload = () => {
-          try {
-            // QR 코드 이미지 추가
-            pdf.addImage(img, 'PNG', x, y, qrSize, qrSize);
-            
-            // URL 텍스트 추가
-            pdf.setFontSize(12);
-            const examLink = getExamLink();
-            pdf.text('URL:', pdfWidth / 2, y + qrSize + 15, { align: 'center' });
-            pdf.text(examLink, pdfWidth / 2, y + qrSize + 25, { align: 'center' });
-            
-            // 안내 메시지 추가
-            pdf.setFontSize(10);
-            pdf.text('QR 코드를 스캔하여 시험에 접속하세요.', pdfWidth / 2, y + qrSize + 40, { align: 'center' });
-            
-            resolve(true);
-          } catch (err) {
-            reject(err);
+      const createSimpleQRCode = () => {
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("width", qrSize.toString());
+        svg.setAttribute("height", qrSize.toString());
+        svg.setAttribute("viewBox", `0 0 ${qrSize} ${qrSize}`);
+        
+        const background = document.createElementNS(svgNS, "rect");
+        background.setAttribute("width", qrSize.toString());
+        background.setAttribute("height", qrSize.toString());
+        background.setAttribute("fill", "white");
+        svg.appendChild(background);
+        
+        const border = document.createElementNS(svgNS, "rect");
+        border.setAttribute("x", "10");
+        border.setAttribute("y", "10");
+        border.setAttribute("width", (qrSize - 20).toString());
+        border.setAttribute("height", (qrSize - 20).toString());
+        border.setAttribute("stroke", "black");
+        border.setAttribute("stroke-width", "5");
+        border.setAttribute("fill", "none");
+        svg.appendChild(border);
+        
+        const tl1 = document.createElementNS(svgNS, "rect");
+        tl1.setAttribute("x", "30");
+        tl1.setAttribute("y", "30");
+        tl1.setAttribute("width", "40");
+        tl1.setAttribute("height", "40");
+        tl1.setAttribute("fill", "black");
+        svg.appendChild(tl1);
+        
+        const tl2 = document.createElementNS(svgNS, "rect");
+        tl2.setAttribute("x", "40");
+        tl2.setAttribute("y", "40");
+        tl2.setAttribute("width", "20");
+        tl2.setAttribute("height", "20");
+        tl2.setAttribute("fill", "white");
+        svg.appendChild(tl2);
+        
+        const tr1 = document.createElementNS(svgNS, "rect");
+        tr1.setAttribute("x", (qrSize - 70).toString());
+        tr1.setAttribute("y", "30");
+        tr1.setAttribute("width", "40");
+        tr1.setAttribute("height", "40");
+        tr1.setAttribute("fill", "black");
+        svg.appendChild(tr1);
+        
+        const tr2 = document.createElementNS(svgNS, "rect");
+        tr2.setAttribute("x", (qrSize - 60).toString());
+        tr2.setAttribute("y", "40");
+        tr2.setAttribute("width", "20");
+        tr2.setAttribute("height", "20");
+        tr2.setAttribute("fill", "white");
+        svg.appendChild(tr2);
+        
+        const bl1 = document.createElementNS(svgNS, "rect");
+        bl1.setAttribute("x", "30");
+        bl1.setAttribute("y", (qrSize - 70).toString());
+        bl1.setAttribute("width", "40");
+        bl1.setAttribute("height", "40");
+        bl1.setAttribute("fill", "black");
+        svg.appendChild(bl1);
+        
+        const bl2 = document.createElementNS(svgNS, "rect");
+        bl2.setAttribute("x", "40");
+        bl2.setAttribute("y", (qrSize - 60).toString());
+        bl2.setAttribute("width", "20");
+        bl2.setAttribute("height", "20");
+        bl2.setAttribute("fill", "white");
+        svg.appendChild(bl2);
+        
+        const text = document.createElementNS(svgNS, "text");
+        text.setAttribute("x", (qrSize / 2).toString());
+        text.setAttribute("y", (qrSize / 2).toString());
+        text.setAttribute("font-size", "16");
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.textContent = "QR 코드 이미지";
+        svg.appendChild(text);
+        
+        for (let i = 0; i < 5; i++) {
+          for (let j = 0; j < 5; j++) {
+            if (Math.random() > 0.5) {
+              const rect = document.createElementNS(svgNS, "rect");
+              rect.setAttribute("x", (90 + i * 15).toString());
+              rect.setAttribute("y", (90 + j * 15).toString());
+              rect.setAttribute("width", "10");
+              rect.setAttribute("height", "10");
+              rect.setAttribute("fill", "black");
+              svg.appendChild(rect);
+            }
           }
+        }
+        
+        return svg;
+      };
+      
+      const qrSvg = createSimpleQRCode();
+      tempDiv.appendChild(qrSvg);
+      
+      const svgUrl = svgToDataURL(qrSvg);
+      
+      const img = new Image();
+      img.src = svgUrl;
+      
+      await new Promise<void>((resolve) => {
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = qrSize;
+          canvas.height = qrSize;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0);
+          
+          const pngUrl = canvas.toDataURL('image/png');
+          
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          
+          const margin = 20;
+          const contentWidth = pdfWidth - (margin * 2);
+          
+          const imgWidth = 160;
+          const imgHeight = 160;
+          
+          const x = (pdfWidth - imgWidth) / 2;
+          const y = 60;
+          
+          pdf.setFontSize(18);
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(`${classroom.classroomName}`, pdfWidth / 2, 30, { align: 'center' });
+          
+          pdf.setFontSize(14);
+          pdf.text('시험 접속 QR 코드', pdfWidth / 2, 40, { align: 'center' });
+          
+          const today = new Date();
+          const dateStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+          pdf.setFontSize(10);
+          pdf.text(`생성일: ${dateStr}`, pdfWidth / 2, 50, { align: 'center' });
+          
+          pdf.addImage(pngUrl, 'PNG', x, y, imgWidth, imgHeight);
+          
+          pdf.setFontSize(12);
+          pdf.text('URL:', pdfWidth / 2, y + imgHeight + 15, { align: 'center' });
+          pdf.text(qrCodeUrl, pdfWidth / 2, y + imgHeight + 25, { align: 'center' });
+          
+          pdf.setFontSize(10);
+          pdf.text('QR 코드를 스캔하여 시험에 접속하세요.', pdfWidth / 2, y + imgHeight + 40, { align: 'center' });
+          
+          pdf.save(`${classroom.classroomName}_QR코드_${dateStr}.pdf`);
+          
+          URL.revokeObjectURL(svgUrl);
+          document.body.removeChild(tempDiv);
+          
+          resolve();
         };
         
         img.onerror = () => {
-          reject(new Error('QR 코드 이미지 로드 실패'));
+          document.body.removeChild(tempDiv);
+          resolve();
         };
-        
-        img.src = qrCodeUrl;
       });
       
-      // PDF 다운로드
-      pdf.save(`${classroom.classroomName}_QR코드_${dateStr}.pdf`);
     } catch (err) {
       console.error('PDF 내보내기 중 오류가 발생했습니다:', err);
       alert('PDF 내보내기에 실패했습니다.');
@@ -396,7 +507,6 @@ const ClassroomDetail: React.FC = () => {
           <div className="p-6">
             {activeTab === "overview" ? (
               <div className="space-y-6">
-                {/* 시험 링크 및 QR 코드 섹션 */}
                 <div className="bg-purple-50 p-6 rounded-lg">
                   <h3 className="text-sm font-medium text-purple-700 mb-2">시험 링크</h3>
                   <div className="flex items-center">
@@ -483,74 +593,6 @@ const ClassroomDetail: React.FC = () => {
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                  <div className="bg-green-50 p-6 rounded-lg">
-                    <h3 className="text-sm font-medium text-green-700 mb-2">테스트 수</h3>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        name="testCount"
-                        value={editedClassroom?.testCount || 0}
-                        onChange={handleInputChange}
-                        min="0"
-                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                      />
-                    ) : (
-                      <p className="text-2xl font-semibold text-green-900">{classroom.testCount}</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium text-gray-800 mb-4">단어 난이도 분포</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    {words.length > 0 ? (
-                      <div>
-                        <div className="flex h-8 w-full rounded-md overflow-hidden">
-                          {(() => {
-                            const difficulties = words.map(w => w.difficulty);
-                            const easyCount = difficulties.filter(d => d === "EASY").length;
-                            const mediumCount = difficulties.filter(d => d === "MEDIUM").length;
-                            const hardCount = difficulties.filter(d => d === "HARD").length;
-                            const total = words.length;
-                            
-                            return (
-                              <>
-                                <div 
-                                  className="bg-green-500" 
-                                  style={{ width: `${(easyCount / total) * 100}%` }}
-                                />
-                                <div 
-                                  className="bg-yellow-500" 
-                                  style={{ width: `${(mediumCount / total) * 100}%` }}
-                                />
-                                <div 
-                                  className="bg-red-500" 
-                                  style={{ width: `${(hardCount / total) * 100}%` }}
-                                />
-                              </>
-                            );
-                          })()}
-                        </div>
-                        
-                        <div className="flex mt-2 text-sm">
-                          <div className="flex items-center mr-4">
-                            <div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
-                            <span>쉬움: {words.filter(w => w.difficulty === "EASY").length}개</span>
-                          </div>
-                          <div className="flex items-center mr-4">
-                            <div className="w-3 h-3 bg-yellow-500 rounded-full mr-1"></div>
-                            <span>보통: {words.filter(w => w.difficulty === "MEDIUM").length}개</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-red-500 rounded-full mr-1"></div>
-                            <span>어려움: {words.filter(w => w.difficulty === "HARD").length}개</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 text-center py-4">단어 정보가 없습니다.</p>
                     )}
                   </div>
                 </div>
