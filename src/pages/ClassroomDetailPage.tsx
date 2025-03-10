@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../layouts/Layout";
 import { ArrowLeft, BookOpen, Book, Edit, Trash2, Save, X, Check, Copy, Link, Download, QrCode } from "lucide-react";
 import classroomService, { Classroom, Word } from "../services/AdminClassroomService";
 import { fetchApiVocabInfo } from "../services/VocabApiService";
-import QRCode from "react-qr-code";
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+import QRCode from "react-qr-code";
 
 const ClassroomDetail: React.FC = () => {
   const { classroomId } = useParams<{ classroomId: string }>();
   const navigate = useNavigate();
-  const qrCodeRef = useRef<HTMLDivElement>(null);
   
   const [classroom, setClassroom] = useState<Classroom | null>(null);
   const [words, setWords] = useState<Word[]>([]);
@@ -171,20 +169,11 @@ const ClassroomDetail: React.FC = () => {
   };
 
   const exportQRToPDF = async () => {
-    if (!classroom || !qrCodeRef.current) return;
+    if (!classroom) return;
     
     setIsExportingPdf(true);
     
     try {
-      const qrCodeElement = qrCodeRef.current;
-      
-      const canvas = await html2canvas(qrCodeElement, {
-        scale: 2, // 해상도를 높이기 위해 스케일 설정
-        backgroundColor: '#ffffff'
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      
       // A4 크기 PDF 생성 (210 x 297 mm)
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -194,34 +183,61 @@ const ClassroomDetail: React.FC = () => {
       const margin = 20;
       const contentWidth = pdfWidth - (margin * 2);
       
-      // QR 코드 이미지 크기 계산
-      const imgWidth = contentWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // 페이지 중앙에 배치하기 위한 좌표 계산
-      const x = margin;
-      const y = (pdfHeight - imgHeight) / 2;
+      // QR 코드 크기 및 위치 계산
+      const qrSize = 160; // QR 코드 크기 (mm)
+      const x = (pdfWidth - qrSize) / 2;
+      const y = 60; // QR 코드 시작 위치
       
       // 제목 추가
-      pdf.setFontSize(16);
-      pdf.text(`${classroom.classroomName} - 시험 접속 QR 코드`, pdfWidth / 2, y - 20, { align: 'center' });
+      pdf.setFontSize(18);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`${classroom.classroomName}`, pdfWidth / 2, 30, { align: 'center' });
+      
+      pdf.setFontSize(14);
+      pdf.text('시험 접속 QR 코드', pdfWidth / 2, 40, { align: 'center' });
       
       // 날짜 추가
       const today = new Date();
       const dateStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
       pdf.setFontSize(10);
-      pdf.text(`생성일: ${dateStr}`, pdfWidth / 2, y - 10, { align: 'center' });
+      pdf.text(`생성일: ${dateStr}`, pdfWidth / 2, 50, { align: 'center' });
       
-      // QR 코드 이미지 추가
-      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+      // QR 코드 SVG를 이미지로 변환 (직접 데이터를 생성하지 않고 구글 차트 API 사용)
+      const qrCodeUrl = `https://chart.googleapis.com/chart?cht=qr&chl=${encodeURIComponent(getExamLink())}&chs=500x500&chld=H|1`;
       
-      // URL 텍스트 추가
-      pdf.setFontSize(12);
-      pdf.text(`URL: ${getExamLink()}`, pdfWidth / 2, y + imgHeight + 10, { align: 'center' });
+      // 이미지 불러오기
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
       
-      // 안내 메시지 추가
-      pdf.setFontSize(10);
-      pdf.text('QR 코드를 스캔하여 시험에 접속하세요.', pdfWidth / 2, y + imgHeight + 20, { align: 'center' });
+      // 이미지 로드 완료 후 PDF에 추가
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          try {
+            // QR 코드 이미지 추가
+            pdf.addImage(img, 'PNG', x, y, qrSize, qrSize);
+            
+            // URL 텍스트 추가
+            pdf.setFontSize(12);
+            const examLink = getExamLink();
+            pdf.text('URL:', pdfWidth / 2, y + qrSize + 15, { align: 'center' });
+            pdf.text(examLink, pdfWidth / 2, y + qrSize + 25, { align: 'center' });
+            
+            // 안내 메시지 추가
+            pdf.setFontSize(10);
+            pdf.text('QR 코드를 스캔하여 시험에 접속하세요.', pdfWidth / 2, y + qrSize + 40, { align: 'center' });
+            
+            resolve(true);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        
+        img.onerror = () => {
+          reject(new Error('QR 코드 이미지 로드 실패'));
+        };
+        
+        img.src = qrCodeUrl;
+      });
       
       // PDF 다운로드
       pdf.save(`${classroom.classroomName}_QR코드_${dateStr}.pdf`);
@@ -409,47 +425,27 @@ const ClassroomDetail: React.FC = () => {
                   </div>
                   <p className="text-sm text-purple-600 mt-2">이 링크를 학생들에게 공유하면 시험에 참여할 수 있습니다.</p>
                   
-                  <div className="mt-6">
-                    <div 
-                      className="bg-white p-6 rounded-lg border border-purple-200 flex flex-col items-center" 
-                      id="qr-code-container"
-                      ref={qrCodeRef}
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={exportQRToPDF}
+                      disabled={isExportingPdf}
+                      className={`flex items-center justify-center ${
+                        isExportingPdf ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
+                      } text-white px-4 py-2 rounded-lg transition-colors`}
                     >
-                      <h4 className="text-sm font-medium text-purple-700 mb-4">시험 QR 코드</h4>
-                      <div className="border-4 border-white p-2 shadow-md rounded-lg bg-white">
-                        <QRCode 
-                          value={getExamLink()} 
-                          size={200}
-                          level="H"
-                          style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                        />
-                      </div>
-                      <p className="text-sm text-center text-gray-600 mt-3 max-w-xs">
-                        {classroom.classroomName} - 시험 접속 QR 코드
-                      </p>
-                    </div>
-
-                    <div className="mt-4 flex justify-center">
-                      <button
-                        onClick={exportQRToPDF}
-                        disabled={isExportingPdf}
-                        className={`flex items-center justify-center ${
-                          isExportingPdf ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
-                        } text-white px-4 py-2 rounded-lg transition-colors`}
-                      >
-                        {isExportingPdf ? (
-                          <>
-                            <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                            PDF 생성 중...
-                          </>
-                        ) : (
-                          <>
-                            <Download size={16} className="mr-2" />
-                            QR 코드 PDF로 내보내기
-                          </>
-                        )}
-                      </button>
-                    </div>
+                      {isExportingPdf ? (
+                        <>
+                          <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                          QR 코드 PDF 생성 중...
+                        </>
+                      ) : (
+                        <>
+                          <QrCode size={16} className="mr-2" />
+                          <Download size={16} className="mr-2" />
+                          QR 코드 PDF로 내보내기
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
 
