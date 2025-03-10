@@ -8,7 +8,7 @@ import classroomService from "../services/AdminClassroomService";
 import { fetchAllVocabs } from "../services/AdminVocabService";
 import { Classroom } from "../services/VocabApiService";
 
-const USER_EMAIL_KEY = "userEmail";
+const USER_EMAIL_KEY = "jkvoca_user_email";
 
 const ServiceIntroduction: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
