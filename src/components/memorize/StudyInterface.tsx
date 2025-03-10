@@ -1,8 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Word, StudyMode } from "../../types/Types";
 import { getKoreanInitial, speakWord } from "../../utils/tts";
 import { CharacterInputs } from "./CharacterInputs";
-import { X, Volume2, RefreshCw } from "lucide-react";
+import {
+  X,
+  Volume2,
+  RefreshCw,
+  ArrowRight,
+  Check,
+  Eye,
+  Sparkle,
+} from "lucide-react";
 
 interface StudyInterfaceProps {
   vocabId: string;
@@ -13,6 +21,7 @@ interface StudyInterfaceProps {
   exitMemorizeMode: () => void;
   studyHook: {
     currentWord: Word | null;
+    currentWordIndex: number;
     userInputs: string[];
     setUserInputs: React.Dispatch<React.SetStateAction<string[]>>;
     isCorrect: boolean | null;
@@ -27,7 +36,7 @@ interface StudyInterfaceProps {
     incorrectWords: number[];
     totalWords: number;
   };
-  isExamMode?: boolean; // 시험 모드 여부 (선택적 프로퍼티)
+  isExamMode?: boolean;
 }
 
 export const StudyInterface: React.FC<StudyInterfaceProps> = ({
@@ -38,10 +47,11 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
   setShowModeSelection,
   exitMemorizeMode,
   studyHook,
-  isExamMode = false, // 기본값은 false
+  isExamMode = false,
 }) => {
   const {
     currentWord,
+    currentWordIndex,
     userInputs,
     setUserInputs,
     isCorrect,
@@ -100,6 +110,17 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (isCorrect && currentWord) {
+      speakWord(
+        studyMode === "englishToKorean"
+          ? currentWord.english
+          : currentWord.korean,
+        studyMode === "englishToKorean" ? "en-US" : "ko-KR"
+      );
+    }
+  }, [isCorrect, currentWord, studyMode]);
+
   const showCorrectAnswer = () => {
     setShowAnswer(true);
 
@@ -115,83 +136,110 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
 
   if (studyCompleted) {
     const correctWords = totalWords - incorrectWords.length;
+    const correctPercent = Math.round((correctWords / totalWords) * 100);
+
     return (
-      <div className="text-center bg-white rounded-xl shadow-md border border-gray-100 p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">학습 완료!</h2>
-        <div className="flex justify-center space-x-8 mb-6">
-          <div>
-            <p className="text-green-600 text-4xl font-bold">{correctWords}</p>
-            <p className="text-green-600">맞은 단어</p>
-          </div>
-          <div>
-            <p className="text-red-600 text-4xl font-bold">
-              {incorrectWords.length}
-            </p>
-            <p className="text-red-600">틀린 단어</p>
+      <div className="max-w-md mx-auto text-center bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+            <Sparkle size={32} className="text-blue-600" />
           </div>
         </div>
+
+        <h2 className="text-2xl font-bold text-gray-800 mb-3">학습 완료!</h2>
+        <p className="text-gray-500 mb-6">
+          총 {totalWords}개의 단어 학습을 마쳤습니다.
+        </p>
+
+        <div className="bg-blue-50 rounded-xl p-4 mb-6">
+          <div className="text-5xl font-bold text-blue-600 mb-2">
+            {correctPercent}%
+          </div>
+          <p className="text-blue-600 font-medium">정답률</p>
+        </div>
+
+        <div className="flex justify-between mb-8">
+          <div className="flex-1 bg-green-50 rounded-xl p-4 mr-3">
+            <div className="text-3xl font-bold text-green-600 mb-1">
+              {correctWords}
+            </div>
+            <p className="text-green-600 text-sm">맞은 단어</p>
+          </div>
+          <div className="flex-1 bg-red-50 rounded-xl p-4 ml-3">
+            <div className="text-3xl font-bold text-red-500 mb-1">
+              {incorrectWords.length}
+            </div>
+            <p className="text-red-500 text-sm">틀린 단어</p>
+          </div>
+        </div>
+
         <button
           onClick={exitMemorizeMode}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-colors"
         >
-          종료하기
+          학습 종료하기
         </button>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="max-w-lg mx-auto">
       <div className="flex justify-between items-center mb-6">
         <button
           onClick={exitMemorizeMode}
-          className="flex items-center text-gray-600 hover:text-blue-600"
+          className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
         >
-          <X size={20} className="mr-1" />
-          <span>종료하기</span>
+          <X size={18} className="mr-1" />
+          <span>종료</span>
         </button>
 
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-gray-800">
+          <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-sm font-medium rounded-full">
             {isExamMode ? "시험 모드" : "암기 모드"}
-          </h1>
+          </div>
         </div>
 
-        <div className="flex items-center">
-          <button
-            onClick={toggleStudyMode}
-            className="flex items-center px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200"
-          >
-            <RefreshCw size={16} className="mr-1" />
-            <span>
-              {studyMode === "englishToKorean"
-                ? "영어 → 한국어"
-                : "한국어 → 영어"}
-            </span>
-          </button>
-        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          <RefreshCw size={16} className="mr-1" />
+          <span className="text-sm">
+            {studyMode === "englishToKorean" ? "초기화" : "초기화"}
+          </span>
+        </button>
       </div>
 
-      <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
-        <div
-          className="h-full bg-blue-500 rounded-full"
-          style={{ width: `${progressPercent}%` }}
-        ></div>
+      <div className="mb-6">
+        <div className="flex justify-between text-sm text-gray-500 mb-1">
+          <span>진행 상황</span>
+          <span>
+            {currentWordIndex + 1}/{totalWords} 단어
+          </span>
+        </div>
+
+        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-500 rounded-full transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          ></div>
+        </div>
       </div>
 
       {currentWord && (
-        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 mb-8">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-3">
               {studyMode === "englishToKorean"
                 ? currentWord.english
                 : currentWord.korean}
             </h2>
 
-            <div className="flex justify-center items-center space-x-2 mb-4">
-              <p className="text-gray-500 font-medium">
+            <div className="flex justify-center items-center mb-2">
+              <p className="text-gray-500 font-medium mr-2">
                 {studyMode === "englishToKorean"
-                  ? currentWord.pronunciation
+                  ? currentWord.pronunciation || ""
                   : ""}
               </p>
               <button
@@ -203,18 +251,20 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
                     studyMode === "englishToKorean" ? "en-US" : "ko-KR"
                   )
                 }
-                className="text-gray-400 hover:text-blue-500 focus:outline-none"
+                className="text-blue-500 hover:text-blue-600 focus:outline-none transition-colors"
               >
                 <Volume2 size={18} />
               </button>
             </div>
 
-            <p className="text-gray-500 mb-4 font-medium">{getHint()}</p>
+            <p className="text-gray-500 mb-1 text-sm font-medium">
+              {getHint()}
+            </p>
 
-            {studyMode === "englishToKorean" && (
-              <p className="text-sm text-gray-600 italic mt-2 mb-6 pl-3 border-l-2 border-gray-200">
+            {studyMode === "englishToKorean" && currentWord.example && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-xl text-sm italic text-gray-600">
                 {currentWord.example}
-              </p>
+              </div>
             )}
           </div>
 
@@ -230,42 +280,54 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
             />
 
             {isCorrect !== null && (
-              <p
-                className={`mt-2 text-center ${
-                  isCorrect ? "text-green-600" : "text-red-600"
+              <div
+                className={`mt-4 p-3 rounded-xl flex items-center ${
+                  isCorrect
+                    ? "bg-green-50 text-green-600"
+                    : "bg-red-50 text-red-600"
                 }`}
               >
-                {isCorrect
-                  ? "정답입니다! 🎉"
-                  : "틀렸습니다. 다시 시도하거나 정답을 확인하세요."}
-              </p>
+                <div className="mr-2">
+                  {isCorrect ? <Check size={18} /> : <X size={18} />}
+                </div>
+                <p className="font-medium">
+                  {isCorrect
+                    ? "정답입니다! 🎉"
+                    : "틀렸습니다. 다시 시도하거나 정답을 확인하세요."}
+                </p>
+              </div>
             )}
 
             {showAnswer && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-center text-blue-700 font-medium">
-                  정답:{" "}
-                  {studyMode === "englishToKorean"
-                    ? currentWord.korean
-                    : currentWord.english}
-                </p>
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm mb-1">정답</p>
+                  <p className="text-blue-700 font-bold text-xl">
+                    {studyMode === "englishToKorean"
+                      ? currentWord.korean
+                      : currentWord.english}
+                  </p>
+                </div>
               </div>
             )}
           </div>
 
+          {/* 하단 버튼 */}
           <div className="flex justify-center space-x-4">
             {isCorrect !== true && !showAnswer && (
               <>
                 <button
                   onClick={checkAnswer}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl flex items-center justify-center transition-colors"
                 >
+                  <Check size={18} className="mr-2" />
                   확인하기
                 </button>
                 <button
                   onClick={showCorrectAnswer}
-                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-100"
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl flex items-center justify-center transition-colors"
                 >
+                  <Eye size={18} className="mr-2" />
                   정답 보기
                 </button>
               </>
@@ -274,14 +336,15 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
             {showAnswer && (
               <button
                 onClick={moveToNextWord}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-200"
+                className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-xl flex items-center justify-center transition-colors"
               >
-                다음
+                <ArrowRight size={18} className="mr-2" />
+                다음 단어
               </button>
             )}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };

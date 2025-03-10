@@ -6,20 +6,19 @@ import { StudyInterface } from "../components/memorize/StudyInterface";
 import { useWordStudy } from "../hooks/useWordStudy";
 import { Word, StudyMode } from "../types/Types";
 import { fetchAllWords, fetchExamWords } from "../services/VocabApiService";
-import { BatchSelectionScreen } from "../components/memorize/BatchSelectionScreen";
 
 const MemorizePage: React.FC = () => {
   const { vocabId } = useParams<{ vocabId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [words, setWords] = useState<Word[]>([]);
+  const [allWords, setAllWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [studyMode, setStudyMode] = useState<StudyMode>("englishToKorean");
   const [showModeSelection, setShowModeSelection] = useState(true);
+  // 상태는 유지하되 실제로는 사용하지 않음
   const [showBatchSelection, setShowBatchSelection] = useState(false);
-  const [selectedBatchSize, setSelectedBatchSize] = useState(5);
 
   // URL에서 ec 파라미터 값 가져오기
   const isExamMode = new URLSearchParams(location.search).get('ec') === 'true';
@@ -35,16 +34,14 @@ const MemorizePage: React.FC = () => {
       try {
         let fetchedWords: Word[];
         if (isExamMode) {
-          // 시험 모드일 경우 시험용 API 호출
           fetchedWords = await fetchExamWords(vocabId);
         } else {
-          // 일반 모드일 경우 기존 API 호출
           fetchedWords = await fetchAllWords(vocabId);
         }
         
         // 단어 목록을 랜덤으로 섞기
         const shuffledWords = shuffleArray([...fetchedWords]);
-        setWords(shuffledWords);
+        setAllWords(shuffledWords);
       } catch (err) {
         console.error("단어 목록을 불러오는 중 오류가 발생했습니다:", err);
         setError("단어 목록을 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.");
@@ -54,9 +51,8 @@ const MemorizePage: React.FC = () => {
     };
 
     loadAllWords();
-  }, [vocabId, location.search, isExamMode]);
+  }, [vocabId, isExamMode]);
 
-  // 배열을 랜덤하게 섞는 함수
   const shuffleArray = (array: any[]) => {
     const newArray = [...array];
     for (let i = newArray.length - 1; i > 0; i--) {
@@ -66,11 +62,25 @@ const MemorizePage: React.FC = () => {
     return newArray;
   };
 
+  // 실제 학습에 사용할 단어들
+  const [activeWords, setActiveWords] = useState<Word[]>([]);
+
+  // 모드 선택 시 activeWords 설정
+  const handleModeSelection = (mode: StudyMode) => {
+    setStudyMode(mode);
+    setShowModeSelection(false);
+    
+    // 단어 선택 화면 제거 후 바로 모든 단어 설정
+    if (allWords.length > 0) {
+      setActiveWords(allWords);
+    }
+  };
+
+  // useWordStudy 호출
   const studyHook = useWordStudy({
-    initialWords: !showModeSelection && !showBatchSelection ? words : [],
-    batchSize: selectedBatchSize,
+    initialWords: activeWords,
     studyMode: studyMode,
-    vocabId: vocabId
+    shouldFetch: false  // 이미 모든 단어를 가져왔으므로 API 호출 비활성화
   });
 
   const { currentWord, userInputs, setUserInputs } = studyHook;
@@ -122,7 +132,7 @@ const MemorizePage: React.FC = () => {
     return (
       <Layout>
         <div className="max-w-5xl mx-auto px-4 py-8 flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       </Layout>
     );
@@ -131,14 +141,34 @@ const MemorizePage: React.FC = () => {
   if (error) {
     return (
       <Layout>
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            <p>{error}</p>
+        <div className="max-w-lg mx-auto px-4 py-8">
+          <div className="bg-red-50 border border-red-100 text-red-700 px-6 py-5 rounded-xl">
+            <p className="font-medium">{error}</p>
             <button
-              className="mt-2 px-4 py-2 bg-red-100 text-red-800 rounded hover:bg-red-200"
+              className="mt-3 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
               onClick={() => window.location.reload()}
             >
               다시 시도
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  // 단어가 없는 경우 처리
+  if (allWords.length === 0 && !loading) {
+    return (
+      <Layout>
+        <div className="max-w-lg mx-auto px-4 py-8">
+          <div className="bg-yellow-50 border border-yellow-100 text-yellow-700 px-6 py-5 rounded-xl text-center">
+            <p className="font-medium mb-3">단어가 없습니다</p>
+            <p className="text-sm text-yellow-600 mb-4">단어장에 단어를 추가해주세요.</p>
+            <button
+              className="px-5 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+              onClick={() => navigate(`/vocabulary/${vocabId}`)}
+            >
+              단어장으로 돌아가기
             </button>
           </div>
         </div>
@@ -151,23 +181,14 @@ const MemorizePage: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 py-8">
         {showModeSelection ? (
           <ModeSelectionScreen
-            setStudyMode={setStudyMode}
+            setStudyMode={handleModeSelection}
             setShowModeSelection={setShowModeSelection}
             setShowBatchSelection={setShowBatchSelection}
-          />
-        ) : showBatchSelection ? (
-          <BatchSelectionScreen
-            selectedBatchSize={selectedBatchSize}
-            setSelectedBatchSize={setSelectedBatchSize}
-            setShowModeSelection={setShowModeSelection}
-            setShowBatchSelection={setShowBatchSelection}
-            words={words}
-            setCurrentBatch={studyHook.setCurrentBatch}
           />
         ) : (
           <StudyInterface
             vocabId={vocabId || ""}
-            words={words}
+            words={allWords}
             studyMode={studyMode}
             toggleStudyMode={toggleStudyMode}
             setShowModeSelection={setShowModeSelection}

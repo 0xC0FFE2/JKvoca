@@ -37,7 +37,7 @@ const StudyInterface: React.FC<StudyInterfaceProps> = ({
   onUnknown,
   onReset,
   onExit,
-  isExamMode = false, // 기본값은 false
+  isExamMode = false,
 }) => {
   const [showAnswer, setShowAnswer] = useState(false);
 
