@@ -12,10 +12,10 @@ const Footer: React.FC = () => {
           <p className="text-gray-500 text-midium font-bold tracking-wide mb-1">
             JKvoca Service
           </p>
-          <p className="text-gray-500 text-sm font-light tracking-wide">
+          <p className="text-gray-500 text-sm tracking-wide">
             운영사 : (주)나누클라우드홀딩스
           </p>
-          <p className="text-gray-500 text-sm font-light mt-1">
+          <p className="text-gray-500 text-sm  mt-1">
             대표 : 이동현 · 문의 : cs@nanu.cc · 비즈니스 문의 : biz@nanu.cc
           </p>
         </div>

@@ -34,7 +34,9 @@ interface StudyInterfaceProps {
     checkAnswer: () => void;
     studyCompleted: boolean;
     incorrectWords: number[];
+    setIncorrectWords?: React.Dispatch<React.SetStateAction<number[]>>;
     totalWords: number;
+    setStudyCompleted?: () => void;
   };
   isExamMode?: boolean;
 }
@@ -64,8 +66,24 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
     checkAnswer,
     studyCompleted,
     incorrectWords,
+    setIncorrectWords,
     totalWords,
+    setStudyCompleted,
   } = studyHook;
+
+  // 디버깅용 로그
+  useEffect(() => {
+    console.log("StudyInterface 렌더링");
+    console.log("현재 단어 인덱스:", currentWordIndex);
+    console.log("총 단어 수:", totalWords);
+    console.log("학습 완료 상태:", studyCompleted);
+  }, [currentWordIndex, totalWords, studyCompleted]);
+
+  useEffect(() => {
+    if (currentWordIndex === totalWords - 1 && isCorrect === true && !studyCompleted) {
+      console.log("마지막 단어가 정답이므로 3초 후 학습 완료로 전환됩니다.");
+    }
+  }, [currentWordIndex, totalWords, isCorrect, studyCompleted]);
 
   const getHint = (): string => {
     if (!currentWord) return "";
@@ -121,7 +139,22 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
     }
   }, [isCorrect, currentWord, studyMode]);
 
+  // 정답 보기 클릭 시 틀린 단어로 카운트하도록 수정
   const showCorrectAnswer = () => {
+    // 정답 보기 클릭 시 틀린 단어로 처리
+    if (currentWord && setIncorrectWords) {
+      console.log("정답 보기 클릭 - 틀린 단어로 카운트:", currentWord.id);
+      setIncorrectWords(prev => {
+        // 이미 틀린 단어 목록에 있는지 확인
+        if (!prev.includes(currentWord.id)) {
+          return [...prev, currentWord.id];
+        }
+        return prev;
+      });
+    }
+    
+    // 오답으로 표시
+    setIsCorrect(false);
     setShowAnswer(true);
 
     if (currentWord) {
@@ -134,7 +167,21 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
     }
   };
 
+  // 수동으로 다음 단어로 이동 처리 - 마지막 단어에서는 학습 완료로 설정
+  const handleMoveToNext = () => {
+    console.log("다음 단어로 이동 버튼 클릭");
+    // 마지막 단어인지 확인
+    if (currentWordIndex === totalWords - 1) {
+      console.log("마지막 단어에서 다음으로 이동 - 학습 완료로 설정");
+      moveToNextWord(); // moveToNextWord 함수에서 studyCompleted를 설정하도록 수정됨
+    } else {
+      moveToNextWord();
+    }
+  };
+
+  // 학습 완료 화면
   if (studyCompleted) {
+    console.log("학습 완료 UI 표시됨");
     const correctWords = totalWords - incorrectWords.length;
     const correctPercent = Math.round((correctWords / totalWords) * 100);
 
@@ -333,13 +380,13 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
               </>
             )}
 
-            {showAnswer && (
+            {(isCorrect === true || showAnswer) && (
               <button
-                onClick={moveToNextWord}
+                onClick={handleMoveToNext}
                 className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-xl flex items-center justify-center transition-colors"
               >
                 <ArrowRight size={18} className="mr-2" />
-                다음 단어
+                {currentWordIndex === totalWords - 1 ? "학습 완료" : "다음 단어"}
               </button>
             )}
           </div>

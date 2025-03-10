@@ -29,7 +29,6 @@ export const useWordStudy = ({
   const [studyCompleted, setStudyCompleted] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(initialWords.length === 0 && shouldFetch);
 
-  // 외부에서 전달된 initialWords가 변경될 때마다 words 업데이트
   useEffect(() => {
     if (initialWords.length > 0) {
       console.log("initialWords 변경 감지:", initialWords.length);
@@ -39,7 +38,6 @@ export const useWordStudy = ({
     }
   }, [initialWords]);
 
-  // API로 단어 가져오기 (shouldFetch가 true인 경우에만)
   useEffect(() => {
     if (!shouldFetch || initialWords.length > 0) return;
 
@@ -56,7 +54,7 @@ export const useWordStudy = ({
             fetchedWords = await fetchAndShuffleWords(vocabId);
           }
           
-          console.log("API로 가져온 단어 수:", fetchedWords.length);
+          //console.log("API로 가져온 단어 수:", fetchedWords.length);
           setWords(fetchedWords);
           resetStudyState();
         } catch (error) {
@@ -70,32 +68,30 @@ export const useWordStudy = ({
     loadWords();
   }, [vocabId, shouldFetch, location.search]);
 
-  const resetStudyState = () => {
+  const resetStudyState = useCallback(() => {
     setCurrentWordIndex(0);
     setUserInputs([]);
     setIsCorrect(null);
     setShowAnswer(false);
     setIncorrectWords([]);
     setStudyCompleted(false);
-  };
+  }, []);
 
   const currentWord = words.length > 0 && currentWordIndex < words.length 
     ? words[currentWordIndex] 
     : null;
 
-  // 디버깅용 로깅
   useEffect(() => {
-    console.log("현재 단어:", currentWord);
-    console.log("총 단어 수:", words.length);
-  }, [currentWord, words]);
+  }, [currentWord, words, currentWordIndex, studyCompleted, incorrectWords]);
 
   const progressPercent = words.length > 0 
     ? Math.round(((currentWordIndex + 1) / words.length) * 100) 
     : 0;
 
   const moveToNextWord = useCallback(() => {
+    
     if (currentWordIndex < words.length - 1) {
-      if (isCorrect === false && currentWord) {
+      if (isCorrect === false && currentWord && !incorrectWords.includes(currentWord.id)) {
         setIncorrectWords(prev => [...prev, currentWord.id]);
       }
 
@@ -104,12 +100,14 @@ export const useWordStudy = ({
       setIsCorrect(null);
       setShowAnswer(false);
     } else {
+      if (isCorrect === false && currentWord && !incorrectWords.includes(currentWord.id)) {
+        setIncorrectWords(prev => [...prev, currentWord.id]);
+      }
       setStudyCompleted(true);
     }
-  }, [currentWordIndex, words.length, currentWord, isCorrect]);
+  }, [currentWordIndex, words.length, currentWord, isCorrect, incorrectWords]);
 
   const markWordAsCompleted = useCallback((wordId: number) => {
-    // 구현 필요
   }, []);
 
   const checkAnswer = useCallback(() => {
@@ -139,20 +137,24 @@ export const useWordStudy = ({
 
     setIsCorrect(isUserCorrect);
 
+    if (!isUserCorrect && currentWord && !incorrectWords.includes(currentWord.id)) {
+      console.log("fucked id:", currentWord.id);
+      setIncorrectWords(prev => [...prev, currentWord.id]);
+    }
+
     if (isUserCorrect) {
       setTimeout(() => {
         moveToNextWord();
       }, 3000);
     }
-  }, [currentWord, userInputs, studyMode, moveToNextWord]);
+  }, [currentWord, userInputs, studyMode, moveToNextWord, incorrectWords]);
 
   const setCurrentBatch = useCallback((newBatch: Word[]) => {
-    console.log("새 배치 설정:", newBatch.length);
     setWords(newBatch);
     resetStudyState();
-  }, []);
+  }, [resetStudyState]);
 
-  const resetWordStudy = async () => {
+  const resetWordStudy = useCallback(async () => {
     if (vocabId && shouldFetch) {
       setLoading(true);
       try {
@@ -175,7 +177,11 @@ export const useWordStudy = ({
     } else {
       resetStudyState();
     }
-  };
+  }, [vocabId, shouldFetch, location.search, resetStudyState]);
+
+  const completeStudy = useCallback(() => {
+    setStudyCompleted(true);
+  }, []);
 
   return {
     words,
@@ -192,7 +198,9 @@ export const useWordStudy = ({
     markWordAsCompleted,
     checkAnswer,
     studyCompleted,
+    setStudyCompleted: completeStudy,
     incorrectWords,
+    setIncorrectWords,
     totalWords: words.length,
     setCurrentBatch,
     setCurrentWordIndex,
