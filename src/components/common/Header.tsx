@@ -14,10 +14,14 @@ import {
 } from "lucide-react";
 import { getValidToken } from "../../utils/auth";
 
+const USER_EMAIL_KEY = "jkvoca_user_email";
+
 const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(() => {
+    return localStorage.getItem(USER_EMAIL_KEY);
+  });
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -33,8 +37,14 @@ const Header = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+  
   useEffect(() => {
     const fetchUserEmail = async () => {
+      // 이미 로컬 스토리지에 이메일이 있으면 API 요청 안함
+      if (localStorage.getItem(USER_EMAIL_KEY)) {
+        return;
+      }
+
       const accessToken = await getValidToken();
 
       if (accessToken) {
@@ -47,7 +57,13 @@ const Header = () => {
           });
 
           const data = await response.text();
-          setUserEmail(data.trim());
+          const email = data.trim();
+          
+          // 이메일을 로컬 스토리지에 저장
+          if (email) {
+            localStorage.setItem(USER_EMAIL_KEY, email);
+            setUserEmail(email);
+          }
         } catch (error) {
           console.error("이메일 요청 중 오류 발생:", error);
         }
@@ -55,7 +71,7 @@ const Header = () => {
     };
 
     fetchUserEmail();
-  }, []);
+  }, []); // 컴포넌트 마운트 시 한 번만 실행
 
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
@@ -74,6 +90,9 @@ const Header = () => {
   };
 
   const handleLogout = () => {
+    // 로그아웃 시 로컬 스토리지에서 이메일 제거
+    localStorage.removeItem(USER_EMAIL_KEY);
+    setUserEmail(null);
     OAuthSDK.logout("/login");
   };
 
