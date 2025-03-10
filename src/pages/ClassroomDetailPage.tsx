@@ -1,28 +1,42 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../layouts/Layout";
-import { ArrowLeft, BookOpen, Book, Edit, Trash2, Save, X, Check, Copy, Link, Download, QrCode } from "lucide-react";
-import classroomService, { Classroom, Word } from "../services/AdminClassroomService";
+import {
+  ArrowLeft,
+  BookOpen,
+  Book,
+  Edit,
+  Trash2,
+  Save,
+  X,
+  Check,
+  Copy,
+  Link,
+} from "lucide-react";
+import classroomService, {
+  Classroom,
+  Word,
+} from "../services/AdminClassroomService";
 import { fetchApiVocabInfo } from "../services/VocabApiService";
-import { jsPDF } from "jspdf";
-import QRCode from "react-qr-code";
+import ClassroomQRGenerator from "../components/vocab/ClassroomQRGenerator";
 
 const ClassroomDetail: React.FC = () => {
   const { classroomId } = useParams<{ classroomId: string }>();
   const navigate = useNavigate();
-  
+
   const [classroom, setClassroom] = useState<Classroom | null>(null);
   const [words, setWords] = useState<Word[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "words">("overview");
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editedClassroom, setEditedClassroom] = useState<Classroom | null>(null);
+  const [editedClassroom, setEditedClassroom] = useState<Classroom | null>(
+    null
+  );
   const [vocabList, setVocabList] = useState<any[]>([]);
   const [vocabInfo, setVocabInfo] = useState<any>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
-  const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
 
   useEffect(() => {
     if (classroomId) {
@@ -30,7 +44,7 @@ const ClassroomDetail: React.FC = () => {
       fetchVocabList();
     }
   }, [classroomId]);
-  
+
   useEffect(() => {
     if (classroom && classroom.studyingVocabId) {
       fetchVocabInfo(classroom.studyingVocabId);
@@ -42,9 +56,9 @@ const ClassroomDetail: React.FC = () => {
     try {
       const [classroomData, wordsData] = await Promise.all([
         classroomService.getClassroomById(classroomId as string),
-        classroomService.getClassroomWords(classroomId as string)
+        classroomService.getClassroomWords(classroomId as string),
       ]);
-      
+
       setClassroom(classroomData);
       setEditedClassroom(classroomData);
       setWords(wordsData);
@@ -65,7 +79,7 @@ const ClassroomDetail: React.FC = () => {
       console.error("단어장 목록을 불러오는데 실패했습니다:", err);
     }
   };
-  
+
   const fetchVocabInfo = async (vocabId: string) => {
     try {
       const info = await fetchApiVocabInfo(vocabId);
@@ -83,22 +97,24 @@ const ClassroomDetail: React.FC = () => {
     setIsEditing(!isEditing);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     if (!editedClassroom) return;
 
     if (name === "lastVocaId" || name === "testCount") {
       setEditedClassroom({
         ...editedClassroom,
-        [name]: parseInt(value)
+        [name]: parseInt(value),
       });
     } else {
       setEditedClassroom({
         ...editedClassroom,
-        [name]: value
+        [name]: value,
       });
     }
-    
+
     if (name === "studyingVocabId" && value) {
       fetchVocabInfo(value);
     }
@@ -106,20 +122,20 @@ const ClassroomDetail: React.FC = () => {
 
   const handleSaveChanges = async () => {
     if (!editedClassroom || !classroom) return;
-    
+
     try {
       await classroomService.updateClassroom(classroomId as string, {
         classroomName: editedClassroom.classroomName,
         studyingVocabId: editedClassroom.studyingVocabId,
         lastVocaId: classroom.lastVocaId,
-        testCount: editedClassroom.testCount
+        testCount: editedClassroom.testCount,
       });
-      
+
       setClassroom({
         ...classroom,
         classroomName: editedClassroom.classroomName,
         studyingVocabId: editedClassroom.studyingVocabId,
-        testCount: editedClassroom.testCount
+        testCount: editedClassroom.testCount,
       });
       setIsEditing(false);
       fetchClassroomInfo();
@@ -132,7 +148,9 @@ const ClassroomDetail: React.FC = () => {
   const handleDeleteClassroom = async () => {
     try {
       await classroomService.deleteClassroom(classroomId as string);
-      navigate("/classroom", { state: { message: "반이 성공적으로 삭제되었습니다." } });
+      navigate("/classroom", {
+        state: { message: "반이 성공적으로 삭제되었습니다." },
+      });
     } catch (err) {
       setError("반 삭제에 실패했습니다.");
       console.error("Error deleting classroom:", err);
@@ -151,213 +169,22 @@ const ClassroomDetail: React.FC = () => {
         return "bg-gray-100 text-gray-800";
     }
   };
-  
+
   const getExamLink = () => {
     return `https://jkvoca.ncloud.sbs/vocabulary/${classroomId}?ec=true`;
   };
-  
+
   const copyExamLink = () => {
     const examLink = getExamLink();
-    navigator.clipboard.writeText(examLink)
+    navigator.clipboard
+      .writeText(examLink)
       .then(() => {
         setLinkCopied(true);
         setTimeout(() => setLinkCopied(false), 3000);
       })
-      .catch(err => {
-        console.error('Failed to copy link:', err);
+      .catch((err) => {
+        console.error("Failed to copy link:", err);
       });
-  };
-
-  const svgToDataURL = (svg: SVGElement): string => {
-    const serializer = new XMLSerializer();
-    const source = serializer.serializeToString(svg);
-    const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-    return URL.createObjectURL(svgBlob);
-  };
-
-  const exportQRToPDF = async () => {
-    if (!classroom) return;
-    
-    setIsExportingPdf(true);
-    
-    try {
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      document.body.appendChild(tempDiv);
-      
-      const qrCodeUrl = getExamLink();
-      const qrSize = 200;
-      
-      const createSimpleQRCode = () => {
-        const svgNS = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(svgNS, "svg");
-        svg.setAttribute("width", qrSize.toString());
-        svg.setAttribute("height", qrSize.toString());
-        svg.setAttribute("viewBox", `0 0 ${qrSize} ${qrSize}`);
-        
-        const background = document.createElementNS(svgNS, "rect");
-        background.setAttribute("width", qrSize.toString());
-        background.setAttribute("height", qrSize.toString());
-        background.setAttribute("fill", "white");
-        svg.appendChild(background);
-        
-        const border = document.createElementNS(svgNS, "rect");
-        border.setAttribute("x", "10");
-        border.setAttribute("y", "10");
-        border.setAttribute("width", (qrSize - 20).toString());
-        border.setAttribute("height", (qrSize - 20).toString());
-        border.setAttribute("stroke", "black");
-        border.setAttribute("stroke-width", "5");
-        border.setAttribute("fill", "none");
-        svg.appendChild(border);
-        
-        const tl1 = document.createElementNS(svgNS, "rect");
-        tl1.setAttribute("x", "30");
-        tl1.setAttribute("y", "30");
-        tl1.setAttribute("width", "40");
-        tl1.setAttribute("height", "40");
-        tl1.setAttribute("fill", "black");
-        svg.appendChild(tl1);
-        
-        const tl2 = document.createElementNS(svgNS, "rect");
-        tl2.setAttribute("x", "40");
-        tl2.setAttribute("y", "40");
-        tl2.setAttribute("width", "20");
-        tl2.setAttribute("height", "20");
-        tl2.setAttribute("fill", "white");
-        svg.appendChild(tl2);
-        
-        const tr1 = document.createElementNS(svgNS, "rect");
-        tr1.setAttribute("x", (qrSize - 70).toString());
-        tr1.setAttribute("y", "30");
-        tr1.setAttribute("width", "40");
-        tr1.setAttribute("height", "40");
-        tr1.setAttribute("fill", "black");
-        svg.appendChild(tr1);
-        
-        const tr2 = document.createElementNS(svgNS, "rect");
-        tr2.setAttribute("x", (qrSize - 60).toString());
-        tr2.setAttribute("y", "40");
-        tr2.setAttribute("width", "20");
-        tr2.setAttribute("height", "20");
-        tr2.setAttribute("fill", "white");
-        svg.appendChild(tr2);
-        
-        const bl1 = document.createElementNS(svgNS, "rect");
-        bl1.setAttribute("x", "30");
-        bl1.setAttribute("y", (qrSize - 70).toString());
-        bl1.setAttribute("width", "40");
-        bl1.setAttribute("height", "40");
-        bl1.setAttribute("fill", "black");
-        svg.appendChild(bl1);
-        
-        const bl2 = document.createElementNS(svgNS, "rect");
-        bl2.setAttribute("x", "40");
-        bl2.setAttribute("y", (qrSize - 60).toString());
-        bl2.setAttribute("width", "20");
-        bl2.setAttribute("height", "20");
-        bl2.setAttribute("fill", "white");
-        svg.appendChild(bl2);
-        
-        const text = document.createElementNS(svgNS, "text");
-        text.setAttribute("x", (qrSize / 2).toString());
-        text.setAttribute("y", (qrSize / 2).toString());
-        text.setAttribute("font-size", "16");
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("dominant-baseline", "middle");
-        text.textContent = "QR 코드 이미지";
-        svg.appendChild(text);
-        
-        for (let i = 0; i < 5; i++) {
-          for (let j = 0; j < 5; j++) {
-            if (Math.random() > 0.5) {
-              const rect = document.createElementNS(svgNS, "rect");
-              rect.setAttribute("x", (90 + i * 15).toString());
-              rect.setAttribute("y", (90 + j * 15).toString());
-              rect.setAttribute("width", "10");
-              rect.setAttribute("height", "10");
-              rect.setAttribute("fill", "black");
-              svg.appendChild(rect);
-            }
-          }
-        }
-        
-        return svg;
-      };
-      
-      const qrSvg = createSimpleQRCode();
-      tempDiv.appendChild(qrSvg);
-      
-      const svgUrl = svgToDataURL(qrSvg);
-      
-      const img = new Image();
-      img.src = svgUrl;
-      
-      await new Promise<void>((resolve) => {
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = qrSize;
-          canvas.height = qrSize;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0);
-          
-          const pngUrl = canvas.toDataURL('image/png');
-          
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
-          
-          const margin = 20;
-          const contentWidth = pdfWidth - (margin * 2);
-          
-          const imgWidth = 160;
-          const imgHeight = 160;
-          
-          const x = (pdfWidth - imgWidth) / 2;
-          const y = 60;
-          
-          pdf.setFontSize(18);
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(`${classroom.classroomName}`, pdfWidth / 2, 30, { align: 'center' });
-          
-          pdf.setFontSize(14);
-          pdf.text('시험 접속 QR 코드', pdfWidth / 2, 40, { align: 'center' });
-          
-          const today = new Date();
-          const dateStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-          pdf.setFontSize(10);
-          pdf.text(`생성일: ${dateStr}`, pdfWidth / 2, 50, { align: 'center' });
-          
-          pdf.addImage(pngUrl, 'PNG', x, y, imgWidth, imgHeight);
-          
-          pdf.setFontSize(12);
-          pdf.text('URL:', pdfWidth / 2, y + imgHeight + 15, { align: 'center' });
-          pdf.text(qrCodeUrl, pdfWidth / 2, y + imgHeight + 25, { align: 'center' });
-          
-          pdf.setFontSize(10);
-          pdf.text('QR 코드를 스캔하여 시험에 접속하세요.', pdfWidth / 2, y + imgHeight + 40, { align: 'center' });
-          
-          pdf.save(`${classroom.classroomName}_QR코드_${dateStr}.pdf`);
-          
-          URL.revokeObjectURL(svgUrl);
-          document.body.removeChild(tempDiv);
-          
-          resolve();
-        };
-        
-        img.onerror = () => {
-          document.body.removeChild(tempDiv);
-          resolve();
-        };
-      });
-      
-    } catch (err) {
-      console.error('PDF 내보내기 중 오류가 발생했습니다:', err);
-      alert('PDF 내보내기에 실패했습니다.');
-    } finally {
-      setIsExportingPdf(false);
-    }
   };
 
   if (isLoading) {
@@ -381,8 +208,7 @@ const ClassroomDetail: React.FC = () => {
             onClick={() => navigate("/classroom")}
             className="flex items-center text-blue-600 hover:text-blue-800"
           >
-            <ArrowLeft size={16} className="mr-1" />
-            반 목록으로 돌아가기
+            <ArrowLeft size={16} className="mr-1" />반 목록으로 돌아가기
           </button>
         </div>
       </Layout>
@@ -396,8 +222,7 @@ const ClassroomDetail: React.FC = () => {
           onClick={() => navigate("/classroom")}
           className="flex items-center text-blue-600 hover:text-blue-800 mb-6"
         >
-          <ArrowLeft size={16} className="mr-1" />
-          반 목록으로 돌아가기
+          <ArrowLeft size={16} className="mr-1" />반 목록으로 돌아가기
         </button>
 
         <div className="flex justify-between items-start mb-8">
@@ -458,7 +283,8 @@ const ClassroomDetail: React.FC = () => {
             <div className="bg-white rounded-lg p-8 max-w-md w-full">
               <h3 className="text-xl font-bold mb-4">반 삭제 확인</h3>
               <p className="text-gray-600 mb-6">
-                '{classroom.classroomName}' 반을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                '{classroom.classroomName}' 반을 정말 삭제하시겠습니까? 이
+                작업은 되돌릴 수 없습니다.
               </p>
               <div className="flex justify-end space-x-3">
                 <button
@@ -488,8 +314,7 @@ const ClassroomDetail: React.FC = () => {
               }`}
               onClick={() => setActiveTab("overview")}
             >
-              <BookOpen size={16} className="mr-2" />
-              반 개요
+              <BookOpen size={16} className="mr-2" />반 개요
             </button>
             <button
               className={`px-6 py-4 text-sm font-medium flex items-center ${
@@ -508,17 +333,26 @@ const ClassroomDetail: React.FC = () => {
             {activeTab === "overview" ? (
               <div className="space-y-6">
                 <div className="bg-purple-50 p-6 rounded-lg">
-                  <h3 className="text-sm font-medium text-purple-700 mb-2">시험 링크</h3>
+                  <h3 className="text-sm font-medium text-purple-700 mb-2">
+                    시험 링크
+                  </h3>
                   <div className="flex items-center">
                     <div className="flex-1 bg-white border border-gray-300 rounded-l-lg p-3 overflow-x-auto">
                       <div className="flex items-center">
-                        <Link size={16} className="text-purple-500 mr-2 flex-shrink-0" />
-                        <span className="text-gray-700 whitespace-nowrap">{getExamLink()}</span>
+                        <Link
+                          size={16}
+                          className="text-purple-500 mr-2 flex-shrink-0"
+                        />
+                        <span className="text-gray-700 whitespace-nowrap">
+                          {getExamLink()}
+                        </span>
                       </div>
                     </div>
-                    <button 
-                      onClick={copyExamLink} 
-                      className={`flex items-center justify-center ${linkCopied ? 'bg-green-600' : 'bg-purple-600'} text-white p-3 rounded-r-lg h-full transition-colors`}
+                    <button
+                      onClick={copyExamLink}
+                      className={`flex items-center justify-center ${
+                        linkCopied ? "bg-green-600" : "bg-purple-600"
+                      } text-white p-3 rounded-r-lg h-full transition-colors`}
                     >
                       {linkCopied ? (
                         <>
@@ -533,35 +367,22 @@ const ClassroomDetail: React.FC = () => {
                       )}
                     </button>
                   </div>
-                  <p className="text-sm text-purple-600 mt-2">이 링크를 학생들에게 공유하면 시험에 참여할 수 있습니다.</p>
-                  
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={exportQRToPDF}
-                      disabled={isExportingPdf}
-                      className={`flex items-center justify-center ${
-                        isExportingPdf ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'
-                      } text-white px-4 py-2 rounded-lg transition-colors`}
-                    >
-                      {isExportingPdf ? (
-                        <>
-                          <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                          QR 코드 PDF 생성 중...
-                        </>
-                      ) : (
-                        <>
-                          <QrCode size={16} className="mr-2" />
-                          <Download size={16} className="mr-2" />
-                          QR 코드 PDF로 내보내기
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  {activeTab === "overview" && (
+                    <ClassroomQRGenerator
+                      classroomName={classroom.classroomName}
+                      examLink={getExamLink()}
+                    />
+                  )}
+                  <p className="text-sm text-purple-600 mt-2">
+                    이 링크를 학생들에게 공유하면 시험에 참여할 수 있습니다.
+                  </p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="bg-blue-50 p-6 rounded-lg">
-                    <h3 className="text-sm font-medium text-blue-700 mb-2">단어장</h3>
+                    <h3 className="text-sm font-medium text-blue-700 mb-2">
+                      단어장
+                    </h3>
                     {isEditing ? (
                       <select
                         name="studyingVocabId"
@@ -572,7 +393,8 @@ const ClassroomDetail: React.FC = () => {
                         <option value="">-- 단어장 선택 --</option>
                         {vocabList.map((vocab) => (
                           <option key={vocab.vocabId} value={vocab.vocabId}>
-                            {vocab.vocabName} ({vocab.vocabLevel}) - {vocab.wordCount}개 단어
+                            {vocab.vocabName} ({vocab.vocabLevel}) -{" "}
+                            {vocab.wordCount}개 단어
                           </option>
                         ))}
                       </select>
@@ -589,10 +411,121 @@ const ClassroomDetail: React.FC = () => {
                             <span className="inline-block bg-blue-100 rounded px-2 py-1">
                               {vocabInfo.vocabLevel}
                             </span>
-                            <p className="mt-2 text-gray-600 text-xs">{vocabInfo.vocabDescription}</p>
+                            <p className="mt-2 text-gray-600 text-xs">
+                              {vocabInfo.vocabDescription}
+                            </p>
                           </div>
                         )}
                       </div>
+                    )}
+                  </div>
+                  <div className="bg-green-50 p-6 rounded-lg">
+                    <h3 className="text-sm font-medium text-green-700 mb-2">
+                      테스트 수
+                    </h3>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        name="testCount"
+                        value={editedClassroom?.testCount || 0}
+                        onChange={handleInputChange}
+                        min="0"
+                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    ) : (
+                      <p className="text-2xl font-semibold text-green-900">
+                        {classroom.testCount}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">
+                    단어 난이도 분포
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    {words.length > 0 ? (
+                      <div>
+                        <div className="flex h-8 w-full rounded-md overflow-hidden">
+                          {(() => {
+                            const difficulties = words.map((w) => w.difficulty);
+                            const easyCount = difficulties.filter(
+                              (d) => d === "EASY"
+                            ).length;
+                            const mediumCount = difficulties.filter(
+                              (d) => d === "MEDIUM"
+                            ).length;
+                            const hardCount = difficulties.filter(
+                              (d) => d === "HARD"
+                            ).length;
+                            const total = words.length;
+
+                            return (
+                              <>
+                                <div
+                                  className="bg-green-500"
+                                  style={{
+                                    width: `${(easyCount / total) * 100}%`,
+                                  }}
+                                />
+                                <div
+                                  className="bg-yellow-500"
+                                  style={{
+                                    width: `${(mediumCount / total) * 100}%`,
+                                  }}
+                                />
+                                <div
+                                  className="bg-red-500"
+                                  style={{
+                                    width: `${(hardCount / total) * 100}%`,
+                                  }}
+                                />
+                              </>
+                            );
+                          })()}
+                        </div>
+
+                        <div className="flex mt-2 text-sm">
+                          <div className="flex items-center mr-4">
+                            <div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
+                            <span>
+                              쉬움:{" "}
+                              {
+                                words.filter((w) => w.difficulty === "EASY")
+                                  .length
+                              }
+                              개
+                            </span>
+                          </div>
+                          <div className="flex items-center mr-4">
+                            <div className="w-3 h-3 bg-yellow-500 rounded-full mr-1"></div>
+                            <span>
+                              보통:{" "}
+                              {
+                                words.filter((w) => w.difficulty === "MEDIUM")
+                                  .length
+                              }
+                              개
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 bg-red-500 rounded-full mr-1"></div>
+                            <span>
+                              어려움:{" "}
+                              {
+                                words.filter((w) => w.difficulty === "HARD")
+                                  .length
+                              }
+                              개
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">
+                        단어 정보가 없습니다.
+                      </p>
                     )}
                   </div>
                 </div>
@@ -622,38 +555,54 @@ const ClassroomDetail: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {words.sort((a, b) => a.wordIndex - b.wordIndex).map((word) => (
-                          <tr key={word.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {word.wordIndex + 1}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{word.english}</div>
-                              <div className="text-sm text-gray-500 mt-1 italic">{word.example}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {word.korean}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {word.pronunciation}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getDifficultyColor(word.difficulty)}`}>
-                                {word.difficulty === "EASY" ? "쉬움" : 
-                                 word.difficulty === "MEDIUM" ? "보통" : "어려움"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                        {words
+                          .sort((a, b) => a.wordIndex - b.wordIndex)
+                          .map((word) => (
+                            <tr key={word.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {word.wordIndex + 1}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {word.english}
+                                </div>
+                                <div className="text-sm text-gray-500 mt-1 italic">
+                                  {word.example}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {word.korean}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {word.pronunciation}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span
+                                  className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getDifficultyColor(
+                                    word.difficulty
+                                  )}`}
+                                >
+                                  {word.difficulty === "EASY"
+                                    ? "쉬움"
+                                    : word.difficulty === "MEDIUM"
+                                    ? "보통"
+                                    : "어려움"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
                 ) : (
                   <div className="text-center py-12">
                     <Book size={48} className="mx-auto text-gray-300 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">단어가 없습니다</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      단어가 없습니다
+                    </h3>
                     <p className="text-gray-500 max-w-md mx-auto">
-                      이 반에 등록된 단어가 없습니다. 단어장 ID와 학습 단어 수를 확인해 주세요.
+                      이 반에 등록된 단어가 없습니다. 단어장 ID와 학습 단어 수를
+                      확인해 주세요.
                     </p>
                   </div>
                 )}

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../layouts/Layout";
-import { Plus, Pencil, Trash2, Book, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Book, ChevronRight, Filter, Search } from "lucide-react";
 import classroomService, { Classroom, ClassroomCreateRequest, ClassroomUpdateRequest } from "../services/AdminClassroomService";
 
 const ClassroomManagement: React.FC = () => {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [filteredClassrooms, setFilteredClassrooms] = useState<Classroom[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
@@ -17,12 +18,19 @@ const ClassroomManagement: React.FC = () => {
     lastVocaId: 0,
     testCount: 0
   });
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [sortBy, setSortBy] = useState<keyof Classroom>("classroomName");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchClassrooms();
   }, []);
+
+  useEffect(() => {
+    filterAndSortClassrooms();
+  }, [classrooms, searchTerm, sortBy, sortDirection]);
 
   const fetchClassrooms = async () => {
     setIsLoading(true);
@@ -36,6 +44,30 @@ const ClassroomManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const filterAndSortClassrooms = () => {
+    let result = [...classrooms];
+
+    // 검색 필터링
+    if (searchTerm) {
+      result = result.filter(classroom => 
+        classroom.classroomName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        classroom.studyingVocabId.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // 정렬
+    result.sort((a, b) => {
+      const valueA = a[sortBy];
+      const valueB = b[sortBy];
+      
+      if (valueA < valueB) return sortDirection === "asc" ? -1 : 1;
+      if (valueA > valueB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    setFilteredClassrooms(result);
   };
 
   const handleCreateClassroom = async () => {
@@ -70,7 +102,8 @@ const ClassroomManagement: React.FC = () => {
   };
 
   const handleDeleteClassroom = async (classroomId: string) => {
-    if (window.confirm("정말로 이 클래스룸을 삭제하시겠습니까?")) {
+    const confirmDelete = window.confirm("정말로 이 클래스룸을 삭제하시겠습니까?");
+    if (confirmDelete) {
       try {
         await classroomService.deleteClassroom(classroomId);
         fetchClassrooms();
@@ -99,18 +132,28 @@ const ClassroomManagement: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    // Convert numeric fields
-    if (name === 'lastVocaId' || name === 'testCount') {
-      setFormData({
-        ...formData,
-        [name]: parseInt(value) || 0
-      });
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'lastVocaId' || name === 'testCount' 
+        ? parseInt(value) || 0 
+        : value
+    }));
+  };
+
+  const handleSort = (key: keyof Classroom) => {
+    if (sortBy === key) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
+      setSortBy(key);
+      setSortDirection("asc");
     }
+  };
+
+  const renderSortIcon = (key: keyof Classroom) => {
+    if (sortBy !== key) return null;
+    return sortDirection === "asc" 
+      ? <span className="ml-1 text-xs">▲</span>
+      : <span className="ml-1 text-xs">▼</span>;
   };
 
   return (
@@ -121,18 +164,36 @@ const ClassroomManagement: React.FC = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-[#205781] to-[#4F959D] text-transparent bg-clip-text">
               반 관리
             </h1>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus size={18} className="mr-2" />
-              새 반 만들기
-            </button>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="반 이름 또는 단어장 ID 검색" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus size={18} className="mr-2" />
+                새 반 만들기
+              </button>
+            </div>
           </div>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 flex items-center justify-between">
               {error}
+              <button 
+                onClick={() => setError(null)} 
+                className="text-red-700 hover:text-red-900"
+              >
+                × 닫기
+              </button>
             </div>
           )}
 
@@ -140,55 +201,106 @@ const ClassroomManagement: React.FC = () => {
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
-          ) : classrooms.length === 0 ? (
+          ) : filteredClassrooms.length === 0 ? (
             <div className="bg-gray-50 rounded-xl p-12 text-center">
-              <p className="text-xl text-gray-500 mb-6">등록된 반이 없습니다.</p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus size={18} className="mr-2" />
-                새 반 만들기
-              </button>
+              <p className="text-xl text-gray-500 mb-6">
+                {searchTerm 
+                  ? "검색 결과가 없습니다." 
+                  : "등록된 반이 없습니다."}
+              </p>
+              {searchTerm ? (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="inline-flex items-center bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  검색 초기화
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus size={18} className="mr-2" />
+                  새 반 만들기
+                </button>
+              )}
             </div>
           ) : (
-            <div className="grid gap-6 mt-8">
-              {classrooms.map((classroom) => (
-                <div
-                  key={classroom.classroomId}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center justify-between p-6">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-800 mb-1">{classroom.classroomName}</h3>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Book size={16} className="mr-1" />
-                        <span>단어장 ID: {classroom.studyingVocabId}</span>
-                        <span className="mx-2">•</span>
-                        <span>학습 단어 수: {classroom.lastVocaId}</span>
-                        <span className="mx-2">•</span>
-                        <span>테스트 수: {classroom.testCount}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleDeleteClassroom(classroom.classroomId)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                        title="삭제"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => viewClassroomDetails(classroom.classroomId)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                        title="상세 보기"
-                      >
-                        <ChevronRight size={18} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-100 border-b">
+                  <tr>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200"
+                      onClick={() => handleSort("classroomName")}
+                    >
+                      반 이름 {renderSortIcon("classroomName")}
+                    </th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200"
+                      onClick={() => handleSort("studyingVocabId")}
+                    >
+                      단어장 ID {renderSortIcon("studyingVocabId")}
+                    </th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200"
+                      onClick={() => handleSort("lastVocaId")}
+                    >
+                      학습 단어 수 {renderSortIcon("lastVocaId")}
+                    </th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200"
+                      onClick={() => handleSort("testCount")}
+                    >
+                      테스트 수 {renderSortIcon("testCount")}
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      작업
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredClassrooms.map((classroom) => (
+                    <tr 
+                      key={classroom.classroomId} 
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {classroom.classroomName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {classroom.studyingVocabId}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {classroom.lastVocaId}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {classroom.testCount}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            onClick={() => handleDeleteClassroom(classroom.classroomId)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                            title="삭제"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => viewClassroomDetails(classroom.classroomId)}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                            title="상세 보기"
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
