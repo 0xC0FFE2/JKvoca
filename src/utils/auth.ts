@@ -14,6 +14,7 @@ export async function getValidToken(): Promise<string | null> {
     if (refreshToken) {
       const newToken = await OAuthSDK.reissueToken(refreshToken);
       if (newToken) {
+        OAuthSDK.setTokens(newToken, refreshToken);
         return newToken;
       }
     }
