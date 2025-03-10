@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import Layout from "../layouts/Layout";
 import StudyModeSelector from "../components/vocabulary/StudyModeSelector";
 import {
@@ -15,30 +15,49 @@ import {
   BookOpen,
   Bookmark,
   MessageCircle,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import { speakWord } from "../utils/tts";
-import { fetchVocabInfo, fetchWords } from "../services/VocabApiService";
+import {
+  fetchVocabInfo,
+  fetchWords,
+  fetchExamWords,
+} from "../services/VocabApiService";
+import classroomService from "../services/AdminClassroomService";
 import { Word } from "../types/Types";
-import { getBookmarkedWords, toggleWordBookmark, isWordBookmarked } from "../utils/utils";
+import {
+  getBookmarkedWords,
+  toggleWordBookmark,
+  getCookie,
+} from "../utils/utils";
 
-// Add this function to your tts.js utility file
-// This function is similar to speakWord but optimized for longer text
 const speakExample = (text: string, lang: string): void => {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
-  utterance.rate = 0.9; // Slightly slower for better comprehension
-  window.speechSynthesis.cancel(); // Cancel any ongoing speech
+  utterance.rate = 0.9;
+  window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
 };
 
 const VocabularyPage: React.FC = () => {
   const { vocabId } = useParams<{ vocabId: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
   const id = vocabId || "";
+
+  const searchParams = new URLSearchParams(location.search);
+  const isExamMode = searchParams.get('ec') === 'true';
+  
+  const classroomId = isExamMode ? id : "";
 
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [wordsPerPage, setWordsPerPage] = useState<number>(24);
   const [expandedWordId, setExpandedWordId] = useState<number | null>(null);
-  const [bookmarkedWords, setBookmarkedWords] = useState<{[key: string]: boolean}>({});
+  const [bookmarkedWords, setBookmarkedWords] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [playingWordId, setPlayingWordId] = useState<number | null>(null);
   const [playingExampleId, setPlayingExampleId] = useState<number | null>(null);
@@ -64,7 +83,25 @@ const VocabularyPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showOnlyBookmarked, setShowOnlyBookmarked] = useState<boolean>(false);
 
+  // 교실 정보 상태 추가
+  const [classroomInfo, setClassroomInfo] = useState<{
+    classroomId: string;
+    classroomName: string;
+    studyingVocabId: string;
+    testCount: number;
+  }>({
+    classroomId: "",
+    classroomName: "",
+    studyingVocabId: "",
+    testCount: 0,
+  });
+
+  const [hasAccessToken, setHasAccessToken] = useState<boolean>(false);
+
   useEffect(() => {
+    const accessToken = localStorage.getItem("REFRESH")
+    setHasAccessToken(!!accessToken);
+
     const savedBookmarks = getBookmarkedWords();
     setBookmarkedWords(savedBookmarks);
   }, []);
@@ -75,14 +112,38 @@ const VocabularyPage: React.FC = () => {
       setError(null);
 
       try {
-        const vocabInfo = await fetchVocabInfo(id);
-        setInfo({
-          title: vocabInfo.vocabName || "단어장",
-          description: vocabInfo.vocabDescription || "설명 없음",
-          level: vocabInfo.vocabLevel || "미정",
-          category: vocabInfo.vocabCategory || "기타",
-          count: vocabInfo.vocabCount || 0,
-        });
+        if (isExamMode) {
+          // 시험 모드일 경우 교실 정보 로드
+          const classroom = await classroomService.getClassroomById(classroomId);
+          setClassroomInfo({
+            classroomId: classroom.classroomId,
+            classroomName: classroom.classroomName,
+            studyingVocabId: classroom.studyingVocabId,
+            testCount: classroom.testCount,
+          });
+
+          // 원본 단어장 정보도 로드
+          if (classroom.studyingVocabId) {
+            const vocabInfo = await fetchVocabInfo(classroom.studyingVocabId);
+            setInfo({
+              title: vocabInfo.vocabName || "단어장",
+              description: vocabInfo.vocabDescription || "설명 없음",
+              level: vocabInfo.vocabLevel || "미정",
+              category: vocabInfo.vocabCategory || "기타",
+              count: vocabInfo.vocabCount || 0,
+            });
+          }
+        } else {
+          // 일반 단어장 모드
+          const vocabInfo = await fetchVocabInfo(id);
+          setInfo({
+            title: vocabInfo.vocabName || "단어장",
+            description: vocabInfo.vocabDescription || "설명 없음",
+            level: vocabInfo.vocabLevel || "미정",
+            category: vocabInfo.vocabCategory || "기타",
+            count: vocabInfo.vocabCount || 0,
+          });
+        }
       } catch (err) {
         setError("단어장 정보를 불러오는 중 오류가 발생했습니다.");
         console.error(err);
@@ -92,22 +153,31 @@ const VocabularyPage: React.FC = () => {
     };
 
     loadData();
-  }, [id]);
+  }, [id, isExamMode, classroomId]);
 
   useEffect(() => {
     const loadWords = async (): Promise<void> => {
       setLoading(true);
       try {
-        const response = await fetchWords(id, currentPage, wordsPerPage);
-        
-        const wordsWithIndex = response.content.map((word, index) => ({
-          ...word,
-          wordIndex: currentPage * wordsPerPage + index + 1
-        }));
+        if (isExamMode) {
+          // 시험 모드일 경우 시험용 API 사용
+          const examWords = await fetchExamWords(classroomId);
+          setWords(examWords);
+          setTotalWords(examWords.length);
+          setTotalPages(Math.ceil(examWords.length / wordsPerPage));
+        } else {
+          // 일반 단어장 모드
+          const response = await fetchWords(id, currentPage, wordsPerPage);
 
-        setWords(wordsWithIndex);
-        setTotalWords(response.totalElements);
-        setTotalPages(response.totalPages);
+          const wordsWithIndex = response.content.map((word, index) => ({
+            ...word,
+            wordIndex: currentPage * wordsPerPage + index + 1,
+          }));
+
+          setWords(wordsWithIndex);
+          setTotalWords(response.totalElements);
+          setTotalPages(response.totalPages);
+        }
       } catch (err) {
         setError("단어 목록을 불러오는 중 오류가 발생했습니다.");
         console.error(err);
@@ -117,7 +187,7 @@ const VocabularyPage: React.FC = () => {
     };
 
     loadWords();
-  }, [id, currentPage, wordsPerPage]);
+  }, [id, currentPage, wordsPerPage, isExamMode, classroomId]);
 
   const paginate = (pageNumber: number): void => {
     setCurrentPage(pageNumber);
@@ -130,7 +200,7 @@ const VocabularyPage: React.FC = () => {
 
   const handleToggleBookmark = (word: Word, event: React.MouseEvent): void => {
     event.stopPropagation();
-    
+
     const updatedBookmarks = toggleWordBookmark(word.english);
     setBookmarkedWords(updatedBookmarks);
   };
@@ -138,25 +208,55 @@ const VocabularyPage: React.FC = () => {
   const handleSpeakWord = (word: Word, event: React.MouseEvent): void => {
     event.stopPropagation();
     setPlayingWordId(word.id);
-  
+
     speakWord(word.english, "en-US");
-  
+
     setTimeout(() => {
       setPlayingWordId(null);
     }, 2000);
   };
-  
+
   const handleSpeakExample = (word: Word, event: React.MouseEvent): void => {
     event.stopPropagation();
     setPlayingExampleId(word.id);
-  
+
     speakExample(word.example, "en-US");
-  
+
     setTimeout(() => {
       setPlayingExampleId(null);
-    }, 5000); // 예문은 길어서 시간을 좀 더 길게 설정
+    }, 5000);
   };
-  
+
+  const handleNextTest = async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const success = await classroomService.moveToNextTest(classroomId);
+      if (success) {
+        // 페이지 새로고침으로 데이터 갱신
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("다음 시험으로 이동 중 오류:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePreviousTest = async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const success = await classroomService.moveToPreviousTest(classroomId);
+      if (success) {
+        // 페이지 새로고침으로 데이터 갱신
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("이전 시험으로 이동 중 오류:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getDifficultyColor = (difficulty: string): string => {
     switch (difficulty.toUpperCase()) {
       case "EASY":
@@ -188,7 +288,7 @@ const VocabularyPage: React.FC = () => {
   };
 
   const filteredWords = showOnlyBookmarked
-    ? words.filter(word => bookmarkedWords[word.english])
+    ? words.filter((word) => bookmarkedWords[word.english])
     : words;
 
   if (loading) {
@@ -225,25 +325,43 @@ const VocabularyPage: React.FC = () => {
     <Layout>
       <div className="max-w-full mx-auto px-4 py-6">
         <div className="bg-gray-100 rounded-xl p-6 mb-6 text-black">
-          <h1 className="text-3xl font-bold mb-2">{info.title}</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            {isExamMode
+              ? `${classroomInfo.classroomName || "교실"} - ${
+                  info.title
+                } `
+              : info.title}
+          </h1>
+
+          {isExamMode && classroomInfo.studyingVocabId && (
+            <div className="mb-3">
+              <Link
+                to={`/vocabulary/${classroomInfo.studyingVocabId}`}
+                className="inline-flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
+              >
+                <ExternalLink size={16} className="mr-1" /> 원본 단어장 보기
+              </Link>
+            </div>
+          )}
+
           <p className="text-black-400 mb-4">{info.description}</p>
-          
+
           <div className="flex flex-wrap gap-4 mt-3">
             <div className="flex items-center bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
               <Book size={18} className="mr-2" />
-              <span>{info.count}개 단어</span>
+              <span>{words.length}개 단어</span>
             </div>
-            
+
             <div className="flex items-center bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
               <BarChart size={18} className="mr-2" />
               <span>난이도: {info.level}</span>
             </div>
-            
+
             <div className="flex items-center bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
               <Users size={18} className="mr-2" />
               <span>카테고리: {info.category}</span>
             </div>
-            
+
             {Object.keys(bookmarkedWords).length > 0 && (
               <div className="flex items-center bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
                 <Bookmark size={18} className="mr-2" />
@@ -251,6 +369,23 @@ const VocabularyPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {isExamMode && hasAccessToken && (
+            <div className="flex mt-4 space-x-4">
+              <button
+                onClick={handlePreviousTest}
+                className="px-4 py-2 bg-white/80 text-indigo-600 font-medium rounded-lg flex items-center shadow-sm hover:bg-white transition-colors"
+              >
+                <ChevronLeft size={18} className="mr-1" /> 이전 시험
+              </button>
+              <button
+                onClick={handleNextTest}
+                className="px-4 py-2 bg-white/80 text-indigo-600 font-medium rounded-lg flex items-center shadow-sm hover:bg-white transition-colors"
+              >
+                다음 시험 <ChevronRight size={18} className="ml-1" />
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-start gap-6">
@@ -261,7 +396,7 @@ const VocabularyPage: React.FC = () => {
                 단어장 학습
               </h2>
 
-              <StudyModeSelector vocabularyId={id} />
+              {true && <StudyModeSelector vocabularyId={id} isExamMode={isExamMode} />}
 
               <hr className="my-4 border-gray-200" />
 
@@ -269,10 +404,12 @@ const VocabularyPage: React.FC = () => {
                 <Grid size={18} className="text-indigo-600 mr-2" />
                 표시 설정
               </h3>
-              
+
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm text-gray-600 block mb-2">보기 모드</label>
+                  <label className="text-sm text-gray-600 block mb-2">
+                    보기 모드
+                  </label>
                   <div className="flex border rounded-lg overflow-hidden">
                     <button
                       className={`flex-1 py-2 flex justify-center items-center ${
@@ -299,30 +436,38 @@ const VocabularyPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm text-gray-600 block mb-2">단어 표시 수</label>
-                  <select
-                    className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    value={wordsPerPage}
-                    onChange={(e) => setWordsPerPage(Number(e.target.value))}
-                  >
-                    <option value={12}>12개씩 보기</option>
-                    <option value={24}>24개씩 보기</option>
-                    <option value={36}>36개씩 보기</option>
-                    <option value={48}>48개씩 보기</option>
-                  </select>
-                </div>
+                {!isExamMode && (
+                  <div>
+                    <label className="text-sm text-gray-600 block mb-2">
+                      단어 표시 수
+                    </label>
+                    <select
+                      className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      value={wordsPerPage}
+                      onChange={(e) => setWordsPerPage(Number(e.target.value))}
+                    >
+                      <option value={12}>12개씩 보기</option>
+                      <option value={24}>24개씩 보기</option>
+                      <option value={36}>36개씩 보기</option>
+                      <option value={48}>48개씩 보기</option>
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="sr-only peer"
                       checked={showOnlyBookmarked}
-                      onChange={() => setShowOnlyBookmarked(!showOnlyBookmarked)}
+                      onChange={() =>
+                        setShowOnlyBookmarked(!showOnlyBookmarked)
+                      }
                     />
                     <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
-                    <span className="ms-3 text-sm font-medium text-gray-700">북마크만 보기</span>
+                    <span className="ms-3 text-sm font-medium text-gray-700">
+                      북마크만 보기
+                    </span>
                   </label>
                 </div>
               </div>
@@ -331,9 +476,9 @@ const VocabularyPage: React.FC = () => {
           <div className="flex-grow">
             {filteredWords.length === 0 ? (
               <div className="p-12 text-center text-gray-500 bg-white rounded-lg shadow-sm border border-gray-100">
-                {showOnlyBookmarked ? 
-                  "북마크한 단어가 없습니다." : 
-                  "단어가 없습니다."}
+                {showOnlyBookmarked
+                  ? "북마크한 단어가 없습니다."
+                  : "단어가 없습니다."}
               </div>
             ) : viewMode === "grid" ? (
               <div className={`grid ${getGridCols()} gap-4 mb-6`}>
@@ -341,9 +486,7 @@ const VocabularyPage: React.FC = () => {
                   <div
                     key={word.id}
                     className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all ${
-                      expandedWordId === word.id
-                        ? "ring-2 ring-indigo-300"
-                        : ""
+                      expandedWordId === word.id ? "ring-2 ring-indigo-300" : ""
                     } ${getDifficultyBgColor(word.difficulty)}`}
                   >
                     <div className="absolute top-2 right-2 text-xs font-medium text-gray-500">
@@ -375,7 +518,7 @@ const VocabularyPage: React.FC = () => {
                           >
                             <Volume2 size={16} />
                           </button>
-                          
+
                           <button
                             className={`focus:outline-none p-1.5 rounded-full hover:bg-gray-100 ${
                               bookmarkedWords[word.english]
@@ -397,8 +540,10 @@ const VocabularyPage: React.FC = () => {
                       </div>
 
                       <div className="mt-3">
-                        <p className="text-gray-700 font-medium">{word.korean}</p>
-                        
+                        <p className="text-gray-700 font-medium">
+                          {word.korean}
+                        </p>
+
                         <div className="flex items-center justify-between mt-3">
                           <span
                             className={`text-xs px-2 py-1 rounded-full ${getDifficultyColor(
@@ -411,7 +556,7 @@ const VocabularyPage: React.FC = () => {
                               ? "보통"
                               : "어려움"}
                           </span>
-                          
+
                           <button
                             className="text-xs text-indigo-500 hover:text-indigo-700 flex items-center"
                             onClick={(e) => {
@@ -425,7 +570,8 @@ const VocabularyPage: React.FC = () => {
                               </>
                             ) : (
                               <>
-                                예문 보기 <ChevronDown size={14} className="ml-1" />
+                                예문 보기{" "}
+                                <ChevronDown size={14} className="ml-1" />
                               </>
                             )}
                           </button>
@@ -533,7 +679,7 @@ const VocabularyPage: React.FC = () => {
                                   }
                                 />
                               </button>
-                              
+
                               <button
                                 className={`focus:outline-none p-1.5 rounded-full hover:bg-gray-100 ${
                                   playingWordId === word.id
@@ -545,7 +691,7 @@ const VocabularyPage: React.FC = () => {
                               >
                                 <Volume2 size={16} />
                               </button>
-                              
+
                               <button
                                 className="text-gray-400 hover:text-indigo-500 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
                                 onClick={() => toggleExpand(word.id)}
@@ -591,8 +737,7 @@ const VocabularyPage: React.FC = () => {
               </div>
             )}
 
-            {/* 페이지네이션 */}
-            {filteredWords.length > 0 && !showOnlyBookmarked && (
+            {filteredWords.length > 0 && !showOnlyBookmarked && !isExamMode && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex flex-col sm:flex-row items-center justify-between">
                 <div className="text-sm text-gray-600 mb-4 sm:mb-0">
                   <span className="font-medium">

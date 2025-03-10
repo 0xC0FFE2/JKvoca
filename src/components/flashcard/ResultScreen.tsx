@@ -7,6 +7,7 @@ interface ResultScreenProps {
   knownWords: number[];
   onReset: () => void;
   onExit: () => void;
+  isExamMode?: boolean; // 시험 모드 여부 (선택적 프로퍼티)
 }
 
 const ResultScreen: React.FC<ResultScreenProps> = ({
@@ -14,6 +15,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
   knownWords,
   onReset,
   onExit,
+  isExamMode = false, // 기본값은 false
 }) => {
   const totalWords = words.length;
   const knownCount = knownWords.length;
@@ -23,6 +25,9 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
   const unknownWordsList = words.filter(
     (word) => !knownWords.includes(word.id)
   );
+
+  // 모드에 따라 다른 텍스트 사용
+  const modeText = isExamMode ? "시험" : "학습";
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -35,7 +40,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
           <span>종료하기</span>
         </button>
 
-        <h1 className="text-2xl font-bold text-center">학습 결과</h1>
+        <h1 className="text-2xl font-bold text-center">{modeText} 결과</h1>
 
         <button
           onClick={onReset}
@@ -82,7 +87,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
         </div>
 
         <p className="text-center text-gray-600">
-          {(knownCount / totalWords) * 100}% 완료했습니다!
+          {Math.round((knownCount / totalWords) * 100)}% 완료했습니다!
         </p>
       </div>
 
@@ -90,7 +95,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
       {unknownWordsList.length > 0 && (
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <BookOpen size={20} className="mr-2 text-red-500" />더 학습해야 할
+            <BookOpen size={20} className="mr-2 text-red-500" />더 {modeText}해야 할
             단어 ({unknownWordsList.length}개)
           </h2>
 
@@ -136,7 +141,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
         >
           <RotateCcw size={20} className="mr-2" />
-          <span>다시 학습하기</span>
+          <span>다시 {modeText}하기</span>
         </button>
 
         <button
@@ -144,7 +149,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
           className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center"
         >
           <X size={20} className="mr-2" />
-          <span>학습 종료</span>
+          <span>{modeText} 종료</span>
         </button>
       </div>
     </div>

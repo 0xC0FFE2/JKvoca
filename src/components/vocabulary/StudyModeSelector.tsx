@@ -4,16 +4,17 @@ import { Brain, Zap } from "lucide-react";
 
 interface StudyModeSelectorProps {
   vocabularyId: string;
+  isExamMode:boolean;
 }
 
-const StudyModeSelector: React.FC<StudyModeSelectorProps> = ({ vocabularyId }) => {
+const StudyModeSelector: React.FC<StudyModeSelectorProps> = ({ vocabularyId , isExamMode }) => {
   return (
     <div className="mb-8">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">학습 모드</h2>
       
       <div className="flex justify-start gap-4">
         <Link 
-          to={`/memorize/${vocabularyId}`}
+          to={`/memorize/${vocabularyId}?ec=${isExamMode}`}
           className="flex flex-col items-center justify-center p-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl text-white shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px] aspect-square w-36"
         >
           <Brain size={24} className="mb-2" />
@@ -22,7 +23,7 @@ const StudyModeSelector: React.FC<StudyModeSelectorProps> = ({ vocabularyId }) =
         </Link>
         
         <Link 
-          to={`/flashcard/${vocabularyId}`}
+          to={`/flashcard/${vocabularyId}?ec=${isExamMode}`}
           className="flex flex-col items-center justify-center p-5 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl text-white shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px] aspect-square w-36"
         >
           <Zap size={24} className="mb-2" />

@@ -7,7 +7,7 @@ interface BatchSelectionScreenProps {
   setShowModeSelection: React.Dispatch<React.SetStateAction<boolean>>;
   setShowBatchSelection: React.Dispatch<React.SetStateAction<boolean>>;
   words: Word[];
-  setCurrentBatch: React.Dispatch<React.SetStateAction<Word[]>>;
+  setCurrentBatch: (words: Word[]) => void; // 함수 타입을 수정
 }
 
 export const BatchSelectionScreen: React.FC<BatchSelectionScreenProps> = ({
@@ -26,7 +26,7 @@ export const BatchSelectionScreen: React.FC<BatchSelectionScreenProps> = ({
       <p className="text-gray-600 mb-8 text-center">
         한 번에 몇 개의 단어를 학습하시겠습니까?
       </p>
-
+      
       <div className="space-y-4">
         {[5, 10, 15, 20].map((size) => (
           <button
@@ -34,7 +34,10 @@ export const BatchSelectionScreen: React.FC<BatchSelectionScreenProps> = ({
             onClick={() => {
               setSelectedBatchSize(size);
               setShowBatchSelection(false);
-              setCurrentBatch(words.slice(0, size));
+              // words 배열이 비어있는지 확인하고 처리
+              if (words && words.length > 0) {
+                setCurrentBatch(words.slice(0, size));
+              }
             }}
             className={`w-full py-3 px-6 ${
               selectedBatchSize === size
@@ -45,7 +48,7 @@ export const BatchSelectionScreen: React.FC<BatchSelectionScreenProps> = ({
             <span className="text-lg font-medium">{size}개 단어</span>
           </button>
         ))}
-
+        
         <button
           onClick={() => {
             setShowModeSelection(true);

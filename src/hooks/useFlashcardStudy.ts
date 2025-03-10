@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Word } from '../types/Types';
-import { fetchAndShuffleWords } from '../services/VocabApiService';
+import { fetchAndShuffleWords, fetchExamWords } from '../services/VocabApiService';
 
 interface UseFlashcardStudyProps {
   vocabId: string | undefined;
@@ -9,6 +9,7 @@ interface UseFlashcardStudyProps {
 
 export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [words, setWords] = useState<Word[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -21,8 +22,16 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
       if (vocabId) {
         setLoading(true);
         try {
-          const shuffledWords = await fetchAndShuffleWords(vocabId);
-          setWords(shuffledWords);
+          const isExamMode = new URLSearchParams(location.search).get('ec') === 'true';
+          
+          let fetchedWords: Word[];
+          if (isExamMode) {
+            fetchedWords = await fetchExamWords(vocabId);
+          } else {
+            fetchedWords = await fetchAndShuffleWords(vocabId);
+          }
+          
+          setWords(fetchedWords);
           setIsCompleted(false);
         } catch (error) {
           console.error("단어 로딩 중 오류:", error);
@@ -31,9 +40,8 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
         }
       }
     };
-
     loadWords();
-  }, [vocabId]);
+  }, [vocabId, location.search]);
   
   const currentWord = words[currentIndex];
   
@@ -66,8 +74,16 @@ export const useFlashcardStudy = ({ vocabId }: UseFlashcardStudyProps) => {
     if (vocabId) {
       setLoading(true);
       try {
-        const shuffledWords = await fetchAndShuffleWords(vocabId);
-        setWords(shuffledWords);
+        const isExamMode = new URLSearchParams(location.search).get('ec') === 'true';
+        
+        let fetchedWords: Word[];
+        if (isExamMode) {
+          fetchedWords = await fetchExamWords(vocabId);
+        } else {
+          fetchedWords = await fetchAndShuffleWords(vocabId);
+        }
+        
+        setWords(fetchedWords);
         setCurrentIndex(0);
         setKnownWords([]);
         setIsCompleted(false);

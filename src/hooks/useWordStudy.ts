@@ -1,59 +1,92 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Word, StudyMode } from '../types/Types';
+import { fetchAndShuffleWords, fetchExamWords } from '../services/VocabApiService';
 
-export const useWordStudy = (
-  words: Word[], 
-  batchSize: number = 5, 
-  studyMode: StudyMode = "englishToKorean"
-) => {
-  const [currentBatch, setCurrentBatch] = useState<Word[]>([]);
+interface UseWordStudyProps {
+  vocabId?: string;
+  initialWords?: Word[];
+  batchSize?: number;
+  studyMode?: StudyMode;
+}
+
+export const useWordStudy = ({
+  vocabId,
+  initialWords = [],
+  batchSize = 5,
+  studyMode = "englishToKorean"
+}: UseWordStudyProps) => {
+  const location = useLocation();
+  
+  const [words, setWords] = useState<Word[]>(initialWords);
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(0);
   const [userInputs, setUserInputs] = useState<string[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showAnswer, setShowAnswer] = useState<boolean>(false);
   const [incorrectWords, setIncorrectWords] = useState<number[]>([]);
   const [studyCompleted, setStudyCompleted] = useState<boolean>(false);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // 단어 목록이 변경되었을 때 초기 배치 생성
   useEffect(() => {
-    if (words.length > 0) {
-      setCurrentBatch(words);
-      setCurrentIndex(0);
-    }
-  }, [words]);
+    const loadWords = async () => {
+      if (vocabId) {
+        setLoading(true);
+        try {
+          const isExamMode = new URLSearchParams(location.search).get('ec') === 'true';
+          
+          let fetchedWords: Word[];
+          if (isExamMode) {
+            fetchedWords = await fetchExamWords(vocabId);
+          } else {
+            fetchedWords = await fetchAndShuffleWords(vocabId);
+          }
+          
+          setWords(fetchedWords);
+          setCurrentWordIndex(0);
+          setUserInputs([]);
+          setIsCorrect(null);
+          setShowAnswer(false);
+          setIncorrectWords([]);
+          setStudyCompleted(false);
+        } catch (error) {
+          console.error("단어 로딩 중 오류:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else if (initialWords.length > 0) {
+        setWords(initialWords);
+        setLoading(false);
+      }
+    };
+    
+    loadWords();
+  }, [vocabId, location.search, initialWords]);
 
-  // 현재 학습 중인 단어
-  const currentWord = currentBatch.length > 0 && currentWordIndex < currentBatch.length ? 
-    currentBatch[currentWordIndex] : null;
+  const currentWord = words.length > 0 && currentWordIndex < words.length 
+    ? words[currentWordIndex] 
+    : null;
 
-  // 진행 상황 계산
   const progressPercent = words.length > 0 
     ? Math.round(((currentWordIndex + 1) / words.length) * 100) 
     : 0;
 
-  // 다음 단어로 이동
   const moveToNextWord = useCallback(() => {
-    if (currentWordIndex < currentBatch.length - 1) {
-      // 현재 단어가 틀렸으면 incorrectWords에 추가
-      if (isCorrect === false) {
-        setIncorrectWords(prev => [...prev, currentWord!.id]);
+    if (currentWordIndex < words.length - 1) {
+      if (isCorrect === false && currentWord) {
+        setIncorrectWords(prev => [...prev, currentWord.id]);
       }
 
-      // 다음 단어로 이동
       setCurrentWordIndex(prev => prev + 1);
       setUserInputs([]);
       setIsCorrect(null);
       setShowAnswer(false);
     } else {
-      // 마지막 단어에 도달했을 때
       setStudyCompleted(true);
     }
-  }, [currentWordIndex, currentBatch.length, currentWord, isCorrect]);
+  }, [currentWordIndex, words.length, currentWord, isCorrect]);
 
-  // 완료된 단어 표시
   const markWordAsCompleted = useCallback((wordId: number) => {
-    // 어차피 moveToNextWord에서 처리함
+    // 구현 필요
   }, []);
 
   const checkAnswer = useCallback(() => {
@@ -90,7 +123,55 @@ export const useWordStudy = (
     }
   }, [currentWord, userInputs, studyMode, moveToNextWord]);
 
+  // setCurrentBatch 함수 추가 - 이전 코드에서 사용하던 함수
+  const setCurrentBatch = useCallback((newBatch: Word[]) => {
+    setWords(newBatch);
+    setCurrentWordIndex(0);
+    setUserInputs([]);
+    setIsCorrect(null);
+    setShowAnswer(false);
+    setIncorrectWords([]);
+    setStudyCompleted(false);
+  }, []);
+
+  const resetWordStudy = async () => {
+    if (vocabId) {
+      setLoading(true);
+      try {
+        const isExamMode = new URLSearchParams(location.search).get('ec') === 'true';
+        
+        let fetchedWords: Word[];
+        if (isExamMode) {
+          fetchedWords = await fetchExamWords(vocabId);
+        } else {
+          fetchedWords = await fetchAndShuffleWords(vocabId);
+        }
+        
+        setWords(fetchedWords);
+        setCurrentWordIndex(0);
+        setUserInputs([]);
+        setIsCorrect(null);
+        setShowAnswer(false);
+        setIncorrectWords([]);
+        setStudyCompleted(false);
+      } catch (error) {
+        console.error("단어 리셋 중 오류:", error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // vocabId가 없는 경우 초기 상태로 리셋
+      setCurrentWordIndex(0);
+      setUserInputs([]);
+      setIsCorrect(null);
+      setShowAnswer(false);
+      setIncorrectWords([]);
+      setStudyCompleted(false);
+    }
+  };
+
   return {
+    words,
     currentWord,
     currentWordIndex,
     userInputs,
@@ -106,7 +187,9 @@ export const useWordStudy = (
     studyCompleted,
     incorrectWords,
     totalWords: words.length,
-    setCurrentBatch,
+    setCurrentBatch,  // 여기에 함수 다시 추가
     setCurrentWordIndex,
+    resetWordStudy,
+    loading
   };
 };

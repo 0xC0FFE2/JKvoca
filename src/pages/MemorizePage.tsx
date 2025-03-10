@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Layout from "../layouts/Layout";
 import { ModeSelectionScreen } from "../components/memorize/ModeSelectionScreen";
 import { StudyInterface } from "../components/memorize/StudyInterface";
 import { useWordStudy } from "../hooks/useWordStudy";
 import { Word, StudyMode } from "../types/Types";
-import { fetchAllWords } from "../services/VocabApiService";
+import { fetchAllWords, fetchExamWords } from "../services/VocabApiService";
 import { BatchSelectionScreen } from "../components/memorize/BatchSelectionScreen";
 
 const MemorizePage: React.FC = () => {
   const { vocabId } = useParams<{ vocabId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -19,6 +20,9 @@ const MemorizePage: React.FC = () => {
   const [showModeSelection, setShowModeSelection] = useState(true);
   const [showBatchSelection, setShowBatchSelection] = useState(false);
   const [selectedBatchSize, setSelectedBatchSize] = useState(5);
+
+  // URL에서 ec 파라미터 값 가져오기
+  const isExamMode = new URLSearchParams(location.search).get('ec') === 'true';
 
   // API를 통해 모든 단어 목록 한 번에 불러오기
   useEffect(() => {
@@ -29,11 +33,17 @@ const MemorizePage: React.FC = () => {
       setError(null);
 
       try {
-        // 모든 단어를 한 번에 가져오는 API 호출
-        const allWords = await fetchAllWords(vocabId);
+        let fetchedWords: Word[];
+        if (isExamMode) {
+          // 시험 모드일 경우 시험용 API 호출
+          fetchedWords = await fetchExamWords(vocabId);
+        } else {
+          // 일반 모드일 경우 기존 API 호출
+          fetchedWords = await fetchAllWords(vocabId);
+        }
         
         // 단어 목록을 랜덤으로 섞기
-        const shuffledWords = shuffleArray([...allWords]);
+        const shuffledWords = shuffleArray([...fetchedWords]);
         setWords(shuffledWords);
       } catch (err) {
         console.error("단어 목록을 불러오는 중 오류가 발생했습니다:", err);
@@ -44,7 +54,7 @@ const MemorizePage: React.FC = () => {
     };
 
     loadAllWords();
-  }, [vocabId]);
+  }, [vocabId, location.search, isExamMode]);
 
   // 배열을 랜덤하게 섞는 함수
   const shuffleArray = (array: any[]) => {
@@ -56,11 +66,12 @@ const MemorizePage: React.FC = () => {
     return newArray;
   };
 
-  const studyHook = useWordStudy(
-    !showModeSelection && !showBatchSelection ? words : [],
-    selectedBatchSize,
-    studyMode
-  );
+  const studyHook = useWordStudy({
+    initialWords: !showModeSelection && !showBatchSelection ? words : [],
+    batchSize: selectedBatchSize,
+    studyMode: studyMode,
+    vocabId: vocabId
+  });
 
   const { currentWord, userInputs, setUserInputs } = studyHook;
 
@@ -91,8 +102,13 @@ const MemorizePage: React.FC = () => {
     studyHook.setShowAnswer(false);
   };
 
+  // ec 파라미터를 유지하면서 나가기
   const exitMemorizeMode = () => {
-    navigate(`/vocabulary/${vocabId}`);
+    if (isExamMode) {
+      navigate(`/vocabulary/${vocabId}?ec=true`);
+    } else {
+      navigate(`/vocabulary/${vocabId}`);
+    }
   };
 
   const adaptedStudyHook = {
@@ -157,6 +173,7 @@ const MemorizePage: React.FC = () => {
             setShowModeSelection={setShowModeSelection}
             exitMemorizeMode={exitMemorizeMode}
             studyHook={adaptedStudyHook as any}
+            isExamMode={isExamMode}
           />
         )}
       </div>

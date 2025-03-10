@@ -23,6 +23,7 @@ interface StudyInterfaceProps {
   onUnknown: () => void;
   onReset: () => void;
   onExit: () => void;
+  isExamMode?: boolean; // 시험 모드 여부 (선택적 프로퍼티)
 }
 
 const StudyInterface: React.FC<StudyInterfaceProps> = ({
@@ -36,6 +37,7 @@ const StudyInterface: React.FC<StudyInterfaceProps> = ({
   onUnknown,
   onReset,
   onExit,
+  isExamMode = false, // 기본값은 false
 }) => {
   const [showAnswer, setShowAnswer] = useState(false);
 
@@ -80,7 +82,7 @@ const StudyInterface: React.FC<StudyInterfaceProps> = ({
 
         <div className="text-center">
           <h1 className="text-xl font-semibold text-gray-800">
-            영어 → 한국어 모드
+            {isExamMode ? "시험 모드" : "플래시카드 모드"}
           </h1>
           <p className="text-sm text-gray-500">
             {currentIndex + 1} / {totalWords} 카드

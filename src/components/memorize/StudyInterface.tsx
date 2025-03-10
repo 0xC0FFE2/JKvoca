@@ -27,6 +27,7 @@ interface StudyInterfaceProps {
     incorrectWords: number[];
     totalWords: number;
   };
+  isExamMode?: boolean; // 시험 모드 여부 (선택적 프로퍼티)
 }
 
 export const StudyInterface: React.FC<StudyInterfaceProps> = ({
@@ -37,6 +38,7 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
   setShowModeSelection,
   exitMemorizeMode,
   studyHook,
+  isExamMode = false, // 기본값은 false
 }) => {
   const {
     currentWord,
@@ -150,7 +152,9 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
         </button>
 
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-gray-800">암기 모드</h1>
+          <h1 className="text-xl font-semibold text-gray-800">
+            {isExamMode ? "시험 모드" : "암기 모드"}
+          </h1>
         </div>
 
         <div className="flex items-center">

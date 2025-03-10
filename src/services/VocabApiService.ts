@@ -101,7 +101,38 @@ export const fetchVocabInfo = async (vocabId: string): Promise<VocabInfo> => {
   }
 };
 
-export const fetchApiVocabInfo = async (vocabId: string): Promise<VocabInfo> => {
+export const fetchExamWords = async (classId: string): Promise<Word[]> => {
+  try {
+    const response = await instance.get(
+      `/v1/words/vocab/list/${classId}/words`
+    );
+
+    if (Array.isArray(response.data)) {
+      return response.data.map((item: any, index: number) => ({
+        id: item.id || "",
+        english: item.english || "",
+        korean: item.korean || "",
+        example: item.example || "",
+        pronunciation: item.pronunciation || "",
+        difficulty: item.difficulty?.toUpperCase() || "MEDIUM",
+        wordIndex: item.wordIndex !== undefined ? item.wordIndex : index,
+      }));
+    } else {
+      console.error(
+        "시험용 API가 예상하는 배열 형식이 아닙니다:",
+        response.data
+      );
+      return [];
+    }
+  } catch (error) {
+    console.error("시험용 단어 목록을 불러오는 중 오류가 발생했습니다:", error);
+    return [];
+  }
+};
+
+export const fetchApiVocabInfo = async (
+  vocabId: string
+): Promise<VocabInfo> => {
   try {
     const response = await instance.get(`/v1/vocab/info/${vocabId}`);
 
