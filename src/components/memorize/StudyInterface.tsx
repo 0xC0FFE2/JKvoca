@@ -80,7 +80,11 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
   }, [currentWordIndex, totalWords, studyCompleted]);
 
   useEffect(() => {
-    if (currentWordIndex === totalWords - 1 && isCorrect === true && !studyCompleted) {
+    if (
+      currentWordIndex === totalWords - 1 &&
+      isCorrect === true &&
+      !studyCompleted
+    ) {
       console.log("마지막 단어가 정답이므로 3초 후 학습 완료로 전환됩니다.");
     }
   }, [currentWordIndex, totalWords, isCorrect, studyCompleted]);
@@ -144,7 +148,7 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
     // 정답 보기 클릭 시 틀린 단어로 처리
     if (currentWord && setIncorrectWords) {
       console.log("정답 보기 클릭 - 틀린 단어로 카운트:", currentWord.id);
-      setIncorrectWords(prev => {
+      setIncorrectWords((prev) => {
         // 이미 틀린 단어 목록에 있는지 확인
         if (!prev.includes(currentWord.id)) {
           return [...prev, currentWord.id];
@@ -152,7 +156,7 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
         return prev;
       });
     }
-    
+
     // 오답으로 표시
     setIsCorrect(false);
     setShowAnswer(true);
@@ -380,15 +384,15 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
               </>
             )}
 
-            {(isCorrect === true || showAnswer) && (
-              <button
-                onClick={handleMoveToNext}
-                className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-xl flex items-center justify-center transition-colors"
-              >
-                <ArrowRight size={18} className="mr-2" />
-                {currentWordIndex === totalWords - 1 ? "학습 완료" : "다음 단어"}
-              </button>
-            )}
+            {(isCorrect === true || showAnswer) &&
+              currentWordIndex === totalWords - 1 && (
+                <button
+                  onClick={handleMoveToNext}
+                  className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-xl flex items-center justify-center transition-colors"
+                >
+                  학습 완료
+                </button>
+              )}
           </div>
         </div>
       )}
