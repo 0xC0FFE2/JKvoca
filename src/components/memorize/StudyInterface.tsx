@@ -363,25 +363,25 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
             )}
           </div>
 
-          {/* 하단 버튼 */}
           <div className="flex justify-center space-x-4">
-            {isCorrect !== true && !showAnswer && (
-              <>
-                <button
-                  onClick={checkAnswer}
-                  className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl flex items-center justify-center transition-colors"
-                >
-                  <Check size={18} className="mr-2" />
-                  확인하기
-                </button>
-                <button
-                  onClick={showCorrectAnswer}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl flex items-center justify-center transition-colors"
-                >
-                  <Eye size={18} className="mr-2" />
-                  정답 보기
-                </button>
-              </>
+            {isCorrect !== true && (
+              <button
+                onClick={checkAnswer}
+                className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl flex items-center justify-center transition-colors"
+              >
+                <Check size={18} className="mr-2" />
+                확인하기
+              </button>
+            )}
+
+            {!showAnswer && (
+              <button
+                onClick={showCorrectAnswer}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl flex items-center justify-center transition-colors"
+              >
+                <Eye size={18} className="mr-2" />
+                정답 보기
+              </button>
             )}
 
             {(isCorrect === true || showAnswer) &&
