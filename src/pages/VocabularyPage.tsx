@@ -85,7 +85,6 @@ const VocabularyPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showOnlyBookmarked, setShowOnlyBookmarked] = useState<boolean>(false);
 
-  // 교실 정보 상태 추가
   const [classroomInfo, setClassroomInfo] = useState<{
     classroomId: string;
     classroomName: string;
@@ -159,13 +158,11 @@ const VocabularyPage: React.FC = () => {
       setLoading(true);
       try {
         if (isExamMode) {
-          // 시험 모드일 경우 시험용 API 사용
           const examWords = await fetchExamWords(classroomId);
           setWords(examWords);
           setTotalWords(examWords.length);
           setTotalPages(Math.ceil(examWords.length / wordsPerPage));
         } else {
-          // 일반 단어장 모드
           const response = await fetchWords(id, currentPage, wordsPerPage);
 
           const wordsWithIndex = response.content.map((word, index) => ({
@@ -245,7 +242,6 @@ const VocabularyPage: React.FC = () => {
     try {
       const success = await classroomService.moveToPreviousTest(classroomId);
       if (success) {
-        // 페이지 새로고침으로 데이터 갱신
         window.location.reload();
       }
     } catch (error) {
@@ -497,7 +493,7 @@ const VocabularyPage: React.FC = () => {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="font-medium text-lg text-gray-900">
-                            {word.english}
+                            {word.english.toLowerCase()}
                           </h3>
                           <p className="text-xs text-gray-500 mt-1">
                             {word.pronunciation}
@@ -637,7 +633,7 @@ const VocabularyPage: React.FC = () => {
                             {word.wordIndex}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                            {word.english}
+                            {word.english.toLowerCase()}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700">
                             {word.korean}
