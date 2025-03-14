@@ -71,7 +71,6 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
     setStudyCompleted,
   } = studyHook;
 
-  // 디버깅용 로그
   useEffect(() => {
     console.log("StudyInterface 렌더링");
     console.log("현재 단어 인덱스:", currentWordIndex);
@@ -143,13 +142,10 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
     }
   }, [isCorrect, currentWord, studyMode]);
 
-  // 정답 보기 클릭 시 틀린 단어로 카운트하도록 수정
   const showCorrectAnswer = () => {
-    // 정답 보기 클릭 시 틀린 단어로 처리
     if (currentWord && setIncorrectWords) {
       console.log("정답 보기 클릭 - 틀린 단어로 카운트:", currentWord.id);
       setIncorrectWords((prev) => {
-        // 이미 틀린 단어 목록에 있는지 확인
         if (!prev.includes(currentWord.id)) {
           return [...prev, currentWord.id];
         }
@@ -157,7 +153,6 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
       });
     }
 
-    // 오답으로 표시
     setIsCorrect(false);
     setShowAnswer(true);
 
@@ -171,19 +166,16 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
     }
   };
 
-  // 수동으로 다음 단어로 이동 처리 - 마지막 단어에서는 학습 완료로 설정
   const handleMoveToNext = () => {
     console.log("다음 단어로 이동 버튼 클릭");
-    // 마지막 단어인지 확인
     if (currentWordIndex === totalWords - 1) {
       console.log("마지막 단어에서 다음으로 이동 - 학습 완료로 설정");
-      moveToNextWord(); // moveToNextWord 함수에서 studyCompleted를 설정하도록 수정됨
+      moveToNextWord();
     } else {
       moveToNextWord();
     }
   };
 
-  // 학습 완료 화면
   if (studyCompleted) {
     console.log("학습 완료 UI 표시됨");
     const correctWords = totalWords - incorrectWords.length;
@@ -362,29 +354,41 @@ export const StudyInterface: React.FC<StudyInterfaceProps> = ({
               </div>
             )}
           </div>
-
+          
           <div className="flex justify-center space-x-4">
-            {isCorrect !== true && (
+            {/* 정답이 아니고 답이 표시되지 않은 경우에만 "확인하기"와 "정답 보기" 버튼 표시 */}
+            {isCorrect !== true && !showAnswer && (
+              <>
+                <button
+                  onClick={checkAnswer}
+                  className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl flex items-center justify-center transition-colors"
+                >
+                  <Check size={18} className="mr-2" />
+                  확인하기
+                </button>
+                <button
+                  onClick={showCorrectAnswer}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl flex items-center justify-center transition-colors"
+                >
+                  <Eye size={18} className="mr-2" />
+                  정답 보기
+                </button>
+              </>
+            )}
+
+            {/* 오답이고 정답이 표시된 상태일 때 "다음으로" 버튼 표시 */}
+            {isCorrect === false && showAnswer && currentWordIndex < totalWords - 1 && (
               <button
-                onClick={checkAnswer}
+                onClick={handleMoveToNext}
                 className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl flex items-center justify-center transition-colors"
               >
-                <Check size={18} className="mr-2" />
-                확인하기
+                <ArrowRight size={18} className="mr-2" />
+                다음으로
               </button>
             )}
 
-            {!showAnswer && (
-              <button
-                onClick={showCorrectAnswer}
-                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl flex items-center justify-center transition-colors"
-              >
-                <Eye size={18} className="mr-2" />
-                정답 보기
-              </button>
-            )}
-
-            {(isCorrect === true || showAnswer) &&
+            {/* 마지막 단어이고 정답이 표시된 상태일 때 "학습 완료" 버튼 표시 */}
+            {(isCorrect === true || (isCorrect === false && showAnswer)) &&
               currentWordIndex === totalWords - 1 && (
                 <button
                   onClick={handleMoveToNext}
