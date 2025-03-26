@@ -297,11 +297,11 @@ const VocaAdmin: React.FC<VocaAdminProps> = ({
                             <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full mr-2">
                               {index + 1}
                             </span>
-                            <span className="font-bold text-gray-900">
+                            <span className="font-bold text-gray-900 text-xl">
                               {word.english.toLowerCase()}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-700 mt-2 font-medium">
+                          <p className="text-xl text-gray-700 mt-2 font-medium">
                             {word.korean}
                           </p>
                         </div>
