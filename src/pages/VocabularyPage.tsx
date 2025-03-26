@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import Layout from "../layouts/Layout";
 import StudyModeSelector from "../components/vocabulary/StudyModeSelector";
@@ -18,6 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  Play,
+  Pause,
 } from "lucide-react";
 import { speakWord } from "../utils/tts";
 import {
@@ -25,6 +27,7 @@ import {
   fetchWords,
   fetchExamWords,
   getClassroomById,
+  fetchAllWords,
 } from "../services/VocabApiService";
 
 import { Word } from "../types/Types";
@@ -50,8 +53,8 @@ const VocabularyPage: React.FC = () => {
   const id = vocabId || "";
 
   const searchParams = new URLSearchParams(location.search);
-  const isExamMode = searchParams.get('ec') === 'true';
-  
+  const isExamMode = searchParams.get("ec") === "true";
+
   const classroomId = isExamMode ? id : "";
 
   const [currentPage, setCurrentPage] = useState<number>(0);
@@ -63,6 +66,11 @@ const VocabularyPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [playingWordId, setPlayingWordId] = useState<number | null>(null);
   const [playingExampleId, setPlayingExampleId] = useState<number | null>(null);
+
+  // 자동 발음 재생 관련 상태 추가
+  const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
+  const [currentAutoPlayIndex, setCurrentAutoPlayIndex] = useState<number>(0);
+  const autoPlayIntervalRef = useRef<number | null>(null);
 
   const [words, setWords] = useState<Word[]>([]);
   const [totalWords, setTotalWords] = useState<number>(0);
@@ -99,14 +107,21 @@ const VocabularyPage: React.FC = () => {
 
   const [hasAccessToken, setHasAccessToken] = useState<boolean>(false);
 
+  // 단어 목록 필터링
+  const filteredWords = showOnlyBookmarked
+    ? words.filter((word) => bookmarkedWords[word.english])
+    : words;
+
+  // 단어장 접근 권한 확인
   useEffect(() => {
-    const accessToken = localStorage.getItem("REFRESH")
+    const accessToken = localStorage.getItem("REFRESH");
     setHasAccessToken(!!accessToken);
 
     const savedBookmarks = getBookmarkedWords();
     setBookmarkedWords(savedBookmarks);
   }, []);
 
+  // 단어장 정보 로드
   useEffect(() => {
     const loadData = async (): Promise<void> => {
       setLoading(true);
@@ -153,6 +168,7 @@ const VocabularyPage: React.FC = () => {
     loadData();
   }, [id, isExamMode, classroomId]);
 
+  // 단어 목록 로드
   useEffect(() => {
     const loadWords = async (): Promise<void> => {
       setLoading(true);
@@ -184,6 +200,86 @@ const VocabularyPage: React.FC = () => {
 
     loadWords();
   }, [id, currentPage, wordsPerPage, isExamMode, classroomId]);
+
+  // 모드 변경 또는 필터링 변경 시 자동 재생 중지
+  useEffect(() => {
+    stopAutoPlay();
+  }, [isExamMode, showOnlyBookmarked]);
+
+  // 자동 재생 효과
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+
+    const playCurrentWord = () => {
+      if (currentAutoPlayIndex >= filteredWords.length) {
+        // 모든 단어를 재생했으면 중지
+        stopAutoPlay();
+        return;
+      }
+
+      const currentWord = filteredWords[currentAutoPlayIndex];
+      if (currentWord) {
+        // 현재 재생 중인 단어 ID 설정 (UI 표시용)
+        setPlayingWordId(currentWord.id);
+
+        // 단어 발음 재생
+        const utterance = new SpeechSynthesisUtterance(currentWord.english);
+        utterance.lang = "en-US";
+        utterance.rate = 0.9;
+
+        // 기존 발음 취소 후 재생
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      }
+    };
+
+    // 현재 단어 재생
+    playCurrentWord();
+
+    // 타이머 설정 - 5초마다 다음 단어 재생
+    const timerId = window.setTimeout(() => {
+      setCurrentAutoPlayIndex(prevIndex => prevIndex + 1);
+    }, 3400);
+
+    // 컴포넌트 언마운트 또는 의존성 변경 시 정리 함수
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [isAutoPlaying, currentAutoPlayIndex, filteredWords]);
+
+  // 컴포넌트 언마운트 시 정리
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+      if (autoPlayIntervalRef.current) {
+        window.clearTimeout(autoPlayIntervalRef.current);
+        autoPlayIntervalRef.current = null;
+      }
+    };
+  }, []);
+
+  // 자동 발음 재생 시작/중지 함수
+  const toggleAutoPlay = (): void => {
+    if (isAutoPlaying) {
+      stopAutoPlay();
+    } else {
+      startAutoPlay();
+    }
+  };
+
+  // 자동 발음 재생 시작 함수
+  const startAutoPlay = (): void => {
+    setIsAutoPlaying(true);
+    setCurrentAutoPlayIndex(0);
+  };
+
+  // 자동 발음 재생 중지 함수
+  const stopAutoPlay = (): void => {
+    setIsAutoPlaying(false);
+    setPlayingWordId(null);
+    setCurrentAutoPlayIndex(0);
+    window.speechSynthesis.cancel();
+  };
 
   const paginate = (pageNumber: number): void => {
     setCurrentPage(pageNumber);
@@ -281,10 +377,6 @@ const VocabularyPage: React.FC = () => {
     return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
   };
 
-  const filteredWords = showOnlyBookmarked
-    ? words.filter((word) => bookmarkedWords[word.english])
-    : words;
-
   if (loading) {
     return (
       <Layout>
@@ -321,9 +413,7 @@ const VocabularyPage: React.FC = () => {
         <div className="bg-gray-100 rounded-xl p-6 mb-6 text-black">
           <h1 className="text-3xl font-bold mb-2">
             {isExamMode
-              ? `${classroomInfo.classroomName || "교실"} - ${
-                  info.title
-                } `
+              ? `${classroomInfo.classroomName || "교실"} - ${info.title} `
               : info.title}
           </h1>
 
@@ -385,12 +475,39 @@ const VocabularyPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-start gap-6">
           <div className="w-full lg:w-64 flex-shrink-0">
             <div className="bg-white rounded-xl border border-gray-100 p-5 sticky top-20">
+              {/* 전체 단어 발음 재생 버튼 (학습 모드 위에 배치) */}
+              <button
+                onClick={toggleAutoPlay}
+                className={`w-full mb-4 flex items-center justify-center py-3 px-4 rounded-lg ${
+                  isAutoPlaying
+                    ? "bg-red-100 text-red-600 hover:bg-red-200"
+                    : "bg-indigo-100 text-indigo-600 hover:bg-indigo-200"
+                } transition-colors font-bold`}
+              >
+                {isAutoPlaying ? (
+                  <>
+                    <Pause size={18} className="mr-2" />
+                    <span>
+                      발음 재생 중지 ({currentAutoPlayIndex + 1}/
+                      {filteredWords.length})
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={18} className="mr-2" />
+                    <span>전체 단어 발음 재생</span>
+                  </>
+                )}
+              </button>
+
               <h2 className="font-bold text-lg text-gray-800 mb-4 flex items-center">
                 <BookOpen size={20} className="text-indigo-600 mr-2" />
                 단어장 학습
               </h2>
 
-              {true && <StudyModeSelector vocabularyId={id} isExamMode={isExamMode} />}
+              {true && (
+                <StudyModeSelector vocabularyId={id} isExamMode={isExamMode} />
+              )}
 
               <hr className="my-4 border-gray-200" />
 
@@ -481,7 +598,11 @@ const VocabularyPage: React.FC = () => {
                     key={word.id}
                     className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all ${
                       expandedWordId === word.id ? "ring-2 ring-indigo-300" : ""
-                    } ${getDifficultyBgColor(word.difficulty)}`}
+                    } ${getDifficultyBgColor(word.difficulty)} ${
+                      isAutoPlaying && playingWordId === word.id
+                        ? "ring-2 ring-indigo-500"
+                        : ""
+                    }`}
                   >
                     <div className="absolute top-2 right-2 text-xs font-medium text-gray-500">
                       #{word.wordIndex}
@@ -627,6 +748,10 @@ const VocabularyPage: React.FC = () => {
                         <tr
                           className={`hover:bg-gray-50 ${
                             expandedWordId === word.id ? "bg-indigo-50" : ""
+                          } ${
+                            isAutoPlaying && playingWordId === word.id
+                              ? "bg-indigo-100"
+                              : ""
                           }`}
                         >
                           <td className="px-4 py-3 text-sm text-gray-500 text-center">
