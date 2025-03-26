@@ -20,6 +20,8 @@ import {
   ExternalLink,
   Play,
   Pause,
+  Settings,
+  Speaker,
 } from "lucide-react";
 import { speakWord } from "../utils/tts";
 import {
@@ -37,6 +39,7 @@ import {
   getCookie,
 } from "../utils/utils";
 import classroomService from "../services/AdminClassroomService";
+import VocaAdmin from "./VocaAdmin";
 
 const speakExample = (text: string, lang: string): void => {
   const utterance = new SpeechSynthesisUtterance(text);
@@ -66,6 +69,9 @@ const VocabularyPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [playingWordId, setPlayingWordId] = useState<number | null>(null);
   const [playingExampleId, setPlayingExampleId] = useState<number | null>(null);
+
+  // 관리자 패널 상태 추가
+  const [showAdminPanel, setShowAdminPanel] = useState<boolean>(false);
 
   // 자동 발음 재생 관련 상태 추가
   const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
@@ -106,6 +112,7 @@ const VocabularyPage: React.FC = () => {
   });
 
   const [hasAccessToken, setHasAccessToken] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   // 단어 목록 필터링
   const filteredWords = showOnlyBookmarked
@@ -116,6 +123,10 @@ const VocabularyPage: React.FC = () => {
   useEffect(() => {
     const accessToken = localStorage.getItem("REFRESH");
     setHasAccessToken(!!accessToken);
+
+    // 임시로 관리자 권한 체크 (실제로는 서버에서 권한 확인 필요)
+    const userRole = localStorage.getItem("USER_ROLE") || "";
+    setIsAdmin(userRole.includes("ADMIN") || userRole.includes("TEACHER"));
 
     const savedBookmarks = getBookmarkedWords();
     setBookmarkedWords(savedBookmarks);
@@ -238,7 +249,7 @@ const VocabularyPage: React.FC = () => {
 
     // 타이머 설정 - 5초마다 다음 단어 재생
     const timerId = window.setTimeout(() => {
-      setCurrentAutoPlayIndex(prevIndex => prevIndex + 1);
+      setCurrentAutoPlayIndex((prevIndex) => prevIndex + 1);
     }, 3400);
 
     // 컴포넌트 언마운트 또는 의존성 변경 시 정리 함수
@@ -347,6 +358,14 @@ const VocabularyPage: React.FC = () => {
     }
   };
 
+  const handleOpenAdminPanel = (): void => {
+    setShowAdminPanel(true);
+  };
+
+  const handleCloseAdminPanel = (): void => {
+    setShowAdminPanel(false);
+  };
+
   const getDifficultyColor = (difficulty: string): string => {
     switch (difficulty.toUpperCase()) {
       case "EASY":
@@ -409,6 +428,15 @@ const VocabularyPage: React.FC = () => {
 
   return (
     <Layout>
+      {showAdminPanel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <VocaAdmin
+            words={words}
+            classroomId={classroomId}
+            onClose={handleCloseAdminPanel}
+          />
+        </div>
+      )}
       <div className="max-w-full mx-auto px-4 py-6">
         <div className="bg-gray-100 rounded-xl p-6 mb-6 text-black">
           <h1 className="text-3xl font-bold mb-2">
@@ -455,18 +483,26 @@ const VocabularyPage: React.FC = () => {
           </div>
 
           {isExamMode && hasAccessToken && (
-            <div className="flex mt-4 space-x-4">
+            <div className="flex flex-wrap mt-4 space-x-4">
               <button
                 onClick={handlePreviousTest}
                 className="px-4 py-2 bg-white/80 text-indigo-600 font-medium rounded-lg flex items-center shadow-sm hover:bg-white transition-colors"
               >
                 <ChevronLeft size={18} className="mr-1" /> 이전 시험
               </button>
+
               <button
                 onClick={handleNextTest}
                 className="px-4 py-2 bg-white/80 text-indigo-600 font-medium rounded-lg flex items-center shadow-sm hover:bg-white transition-colors"
               >
                 다음 시험 <ChevronRight size={18} className="ml-1" />
+              </button>
+
+              <button
+                onClick={handleOpenAdminPanel}
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-400 text-white font-medium rounded-lg flex items-center shadow-sm hover:bg-amber-600 transition-colors"
+              >
+                <Speaker size={18} className="mr-1" /> TTS 자동 시험
               </button>
             </div>
           )}
@@ -584,6 +620,8 @@ const VocabularyPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* 이하 단어 목록 표시 부분은 원본과 동일하게 유지 */}
           <div className="flex-grow">
             {filteredWords.length === 0 ? (
               <div className="p-12 text-center text-gray-500 bg-white rounded-lg shadow-sm border border-gray-100">
