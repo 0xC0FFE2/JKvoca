@@ -25,7 +25,7 @@ const VocaAdmin: React.FC<VocaAdminProps> = ({
   const [currentWordRepeat, setCurrentWordRepeat] = useState<number>(0);
 
   const intervalRef = useRef<number | null>(null);
-  const PLAY_INTERVAL = 14500;
+  const PLAY_INTERVAL = 11500;
   const ANSWER_DELAY = 2000;
   const MAX_WORD_REPEATS = 2;
 
