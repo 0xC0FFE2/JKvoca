@@ -222,11 +222,12 @@ const VocabularyPage: React.FC = () => {
     if (!isAutoPlaying) return;
 
     const playCurrentWord = () => {
-      if (currentAutoPlayIndex >= filteredWords.length) {
-        // 모든 단어를 재생했으면 중지
-        stopAutoPlay();
-        return;
-      }
+      // 삭제된 부분 (재생 중지 조건 제거)
+      // if (currentAutoPlayIndex >= filteredWords.length) {
+      //   // 모든 단어를 재생했으면 중지
+      //   stopAutoPlay();
+      //   return;
+      // }
 
       const currentWord = filteredWords[currentAutoPlayIndex];
       if (currentWord) {
@@ -247,9 +248,9 @@ const VocabularyPage: React.FC = () => {
     // 현재 단어 재생
     playCurrentWord();
 
-    // 타이머 설정 - 5초마다 다음 단어 재생
+    // 타이머 설정 - 3.4초마다 다음 단어 재생 (수정된 부분)
     const timerId = window.setTimeout(() => {
-      setCurrentAutoPlayIndex((prevIndex) => prevIndex + 1);
+      setCurrentAutoPlayIndex((prevIndex) => (prevIndex + 1) % filteredWords.length);
     }, 3400);
 
     // 컴포넌트 언마운트 또는 의존성 변경 시 정리 함수
@@ -531,7 +532,7 @@ const VocabularyPage: React.FC = () => {
                 ) : (
                   <>
                     <Play size={18} className="mr-2" />
-                    <span>전체 단어 발음 재생</span>
+                    <span>전체 단어 발음 재생 (반복)</span>
                   </>
                 )}
               </button>
