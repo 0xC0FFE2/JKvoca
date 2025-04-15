@@ -41,6 +41,143 @@ import {
 import classroomService from "../services/AdminClassroomService";
 import VocaAdmin from "./VocaAdmin";
 
+// 스켈레톤 UI 컴포넌트
+const SkeletonPulse = () => (
+  <div className="animate-pulse bg-gray-200 rounded-md"></div>
+);
+
+const SkeletonHeader = () => (
+  <div className="bg-gray-100 rounded-xl p-6 mb-6">
+    <div className="h-8 w-3/4 mb-2">
+      <SkeletonPulse />
+    </div>
+    <div className="h-4 w-full mb-4">
+      <SkeletonPulse />
+    </div>
+    <div className="h-4 w-5/6 mb-2">
+      <SkeletonPulse />
+    </div>
+    <div className="flex flex-wrap gap-4 mt-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-10 w-32 bg-white/20 rounded-lg px-4 py-2">
+          <SkeletonPulse />
+        </div>
+      ))}
+    </div>
+    <div className="flex flex-wrap mt-4 space-x-4">
+      {[1, 2].map((i) => (
+        <div key={i} className="h-10 w-32 rounded-lg">
+          <SkeletonPulse />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const SkeletonSidebar = () => (
+  <div className="w-full lg:w-64 flex-shrink-0">
+    <div className="bg-white rounded-xl border border-gray-100 p-5 sticky top-20">
+      <div className="h-10 w-full mb-4">
+        <SkeletonPulse />
+      </div>
+      <div className="h-6 w-3/4 mb-4">
+        <SkeletonPulse />
+      </div>
+      <div className="space-y-3 mb-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-10 w-full">
+            <SkeletonPulse />
+          </div>
+        ))}
+      </div>
+      <div className="h-1 w-full my-4 bg-gray-200"></div>
+      <div className="h-6 w-1/2 mb-3">
+        <SkeletonPulse />
+      </div>
+      <div className="space-y-4">
+        <div className="h-20 w-full">
+          <SkeletonPulse />
+        </div>
+        <div className="h-20 w-full">
+          <SkeletonPulse />
+        </div>
+        <div className="h-8 w-full">
+          <SkeletonPulse />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const SkeletonWordGrid = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+    {Array(12).fill(0).map((_, i) => (
+      <div key={i} className="bg-white rounded-lg shadow-sm border overflow-hidden h-40">
+        <div className="p-4">
+          <div className="flex justify-between items-start mb-2">
+            <div className="w-3/4">
+              <div className="h-6 mb-1">
+                <SkeletonPulse />
+              </div>
+              <div className="h-3 w-1/2">
+                <SkeletonPulse />
+              </div>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="h-8 w-16">
+                <SkeletonPulse />
+              </div>
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="h-5 w-full mb-3">
+              <SkeletonPulse />
+            </div>
+            <div className="flex items-center justify-between mt-3">
+              <div className="h-6 w-16">
+                <SkeletonPulse />
+              </div>
+              <div className="h-6 w-24">
+                <SkeletonPulse />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const SkeletonWordList = () => (
+  <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="h-12 w-full bg-indigo-50">
+      <SkeletonPulse />
+    </div>
+    <div className="divide-y divide-gray-100">
+      {Array(8).fill(0).map((_, i) => (
+        <div key={i} className="h-14 w-full">
+          <SkeletonPulse />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const SkeletonPagination = () => (
+  <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex flex-col sm:flex-row items-center justify-between">
+    <div className="h-5 w-40 mb-4 sm:mb-0">
+      <SkeletonPulse />
+    </div>
+    <div className="flex items-center">
+      {Array(5).fill(0).map((_, i) => (
+        <div key={i} className="h-8 w-10 mx-1">
+          <SkeletonPulse />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const speakExample = (text: string, lang: string): void => {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
@@ -70,10 +207,8 @@ const VocabularyPage: React.FC = () => {
   const [playingWordId, setPlayingWordId] = useState<number | null>(null);
   const [playingExampleId, setPlayingExampleId] = useState<number | null>(null);
 
-  // 관리자 패널 상태 추가
   const [showAdminPanel, setShowAdminPanel] = useState<boolean>(false);
 
-  // 자동 발음 재생 관련 상태 추가
   const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
   const [currentAutoPlayIndex, setCurrentAutoPlayIndex] = useState<number>(0);
   const autoPlayIntervalRef = useRef<number | null>(null);
@@ -114,17 +249,14 @@ const VocabularyPage: React.FC = () => {
   const [hasAccessToken, setHasAccessToken] = useState<boolean>(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
-  // 단어 목록 필터링
   const filteredWords = showOnlyBookmarked
     ? words.filter((word) => bookmarkedWords[word.english])
     : words;
 
-  // 단어장 접근 권한 확인
   useEffect(() => {
     const accessToken = localStorage.getItem("REFRESH");
     setHasAccessToken(!!accessToken);
 
-    // 임시로 관리자 권한 체크 (실제로는 서버에서 권한 확인 필요)
     const userRole = localStorage.getItem("USER_ROLE") || "";
     setIsAdmin(userRole.includes("ADMIN") || userRole.includes("TEACHER"));
 
@@ -132,7 +264,6 @@ const VocabularyPage: React.FC = () => {
     setBookmarkedWords(savedBookmarks);
   }, []);
 
-  // 단어장 정보 로드
   useEffect(() => {
     const loadData = async (): Promise<void> => {
       setLoading(true);
@@ -179,7 +310,6 @@ const VocabularyPage: React.FC = () => {
     loadData();
   }, [id, isExamMode, classroomId]);
 
-  // 단어 목록 로드
   useEffect(() => {
     const loadWords = async (): Promise<void> => {
       setLoading(true);
@@ -212,54 +342,38 @@ const VocabularyPage: React.FC = () => {
     loadWords();
   }, [id, currentPage, wordsPerPage, isExamMode, classroomId]);
 
-  // 모드 변경 또는 필터링 변경 시 자동 재생 중지
   useEffect(() => {
     stopAutoPlay();
   }, [isExamMode, showOnlyBookmarked]);
 
-  // 자동 재생 효과
   useEffect(() => {
     if (!isAutoPlaying) return;
 
     const playCurrentWord = () => {
-      // 삭제된 부분 (재생 중지 조건 제거)
-      // if (currentAutoPlayIndex >= filteredWords.length) {
-      //   // 모든 단어를 재생했으면 중지
-      //   stopAutoPlay();
-      //   return;
-      // }
-
       const currentWord = filteredWords[currentAutoPlayIndex];
       if (currentWord) {
-        // 현재 재생 중인 단어 ID 설정 (UI 표시용)
         setPlayingWordId(currentWord.id);
 
-        // 단어 발음 재생
         const utterance = new SpeechSynthesisUtterance(currentWord.english);
         utterance.lang = "en-US";
         utterance.rate = 0.9;
 
-        // 기존 발음 취소 후 재생
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
       }
     };
 
-    // 현재 단어 재생
     playCurrentWord();
 
-    // 타이머 설정 - 3.4초마다 다음 단어 재생 (수정된 부분)
     const timerId = window.setTimeout(() => {
       setCurrentAutoPlayIndex((prevIndex) => (prevIndex + 1) % filteredWords.length);
     }, 3400);
 
-    // 컴포넌트 언마운트 또는 의존성 변경 시 정리 함수
     return () => {
       window.clearTimeout(timerId);
     };
   }, [isAutoPlaying, currentAutoPlayIndex, filteredWords]);
 
-  // 컴포넌트 언마운트 시 정리
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
@@ -270,7 +384,6 @@ const VocabularyPage: React.FC = () => {
     };
   }, []);
 
-  // 자동 발음 재생 시작/중지 함수
   const toggleAutoPlay = (): void => {
     if (isAutoPlaying) {
       stopAutoPlay();
@@ -279,13 +392,11 @@ const VocabularyPage: React.FC = () => {
     }
   };
 
-  // 자동 발음 재생 시작 함수
   const startAutoPlay = (): void => {
     setIsAutoPlaying(true);
     setCurrentAutoPlayIndex(0);
   };
 
-  // 자동 발음 재생 중지 함수
   const stopAutoPlay = (): void => {
     setIsAutoPlaying(false);
     setPlayingWordId(null);
@@ -397,12 +508,18 @@ const VocabularyPage: React.FC = () => {
     return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
   };
 
+  // 스켈레톤 UI 렌더링
   if (loading) {
     return (
       <Layout>
         <div className="max-w-full mx-auto px-4 py-6">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+          <SkeletonHeader />
+          <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+            <SkeletonSidebar />
+            <div className="flex-grow">
+              {viewMode === "grid" ? <SkeletonWordGrid /> : <SkeletonWordList />}
+              <SkeletonPagination />
+            </div>
           </div>
         </div>
       </Layout>
@@ -512,7 +629,6 @@ const VocabularyPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-start gap-6">
           <div className="w-full lg:w-64 flex-shrink-0">
             <div className="bg-white rounded-xl border border-gray-100 p-5 sticky top-20">
-              {/* 전체 단어 발음 재생 버튼 (학습 모드 위에 배치) */}
               <button
                 onClick={toggleAutoPlay}
                 className={`w-full mb-4 flex items-center justify-center py-3 px-4 rounded-lg ${
@@ -622,7 +738,6 @@ const VocabularyPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 이하 단어 목록 표시 부분은 원본과 동일하게 유지 */}
           <div className="flex-grow">
             {filteredWords.length === 0 ? (
               <div className="p-12 text-center text-gray-500 bg-white rounded-lg shadow-sm border border-gray-100">
