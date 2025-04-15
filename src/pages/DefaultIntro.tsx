@@ -8,7 +8,169 @@ import classroomService from "../services/AdminClassroomService";
 import { fetchAllVocabs } from "../services/AdminVocabService";
 import { Classroom } from "../services/VocabApiService";
 
+// 스켈레톤 UI 컴포넌트
+const SkeletonPulse = () => (
+  <div className="animate-pulse bg-gray-200 rounded-md"></div>
+);
+
+// 관리자용 스켈레톤 UI
+const AdminSkeletonUI = () => (
+  <div className="max-w-7xl mx-auto px-6 py-12">
+    <div className="h-10 w-72 mb-6">
+      <SkeletonPulse />
+    </div>
+
+    <div className="mb-8">
+      <div className="w-full max-w-xl">
+        <div className="relative flex items-center justify-between py-3 px-4 bg-white rounded-xl border border-gray-300">
+          <div className="h-8 w-full">
+            <SkeletonPulse />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* 반 목록 스켈레톤 */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center mb-6">
+          <div className="h-7 w-32">
+            <SkeletonPulse />
+          </div>
+          <div className="h-9 w-24">
+            <SkeletonPulse />
+          </div>
+        </div>
+
+        <ul className="space-y-3">
+          {Array(5).fill(0).map((_, i) => (
+            <li key={i} className="p-4 border border-gray-100 rounded-lg">
+              <div className="flex justify-between items-center">
+                <div className="w-3/5">
+                  <div className="h-5 w-full mb-2">
+                    <SkeletonPulse />
+                  </div>
+                  <div className="h-4 w-3/4">
+                    <SkeletonPulse />
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <div className="h-8 w-20">
+                    <SkeletonPulse />
+                  </div>
+                  <div className="h-8 w-20">
+                    <SkeletonPulse />
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* 단어장 목록 스켈레톤 */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center mb-6">
+          <div className="h-7 w-32">
+            <SkeletonPulse />
+          </div>
+          <div className="h-9 w-24">
+            <SkeletonPulse />
+          </div>
+        </div>
+
+        <ul className="space-y-3">
+          {Array(5).fill(0).map((_, i) => (
+            <li key={i} className="p-4 border border-gray-100 rounded-lg">
+              <div className="flex justify-between items-center">
+                <div className="w-3/5">
+                  <div className="h-5 w-full mb-2">
+                    <SkeletonPulse />
+                  </div>
+                  <div className="h-4 w-2/4">
+                    <SkeletonPulse />
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <div className="h-8 w-20">
+                    <SkeletonPulse />
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+);
+
+// 일반 사용자용 스켈레톤 UI
+const UserSkeletonUI = () => (
+  <section className="pt-12 pb-16">
+    <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-2xl">
+        <div className="h-12 w-3/4 mb-6">
+          <SkeletonPulse />
+        </div>
+
+        <div className="mb-6">
+          <div className="h-7 w-full mb-3">
+            <SkeletonPulse />
+          </div>
+          <div className="h-7 w-5/6">
+            <SkeletonPulse />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-12 relative">
+        <div className="relative">
+          <div className="w-full h-128 rounded-xl bg-gray-300">
+            <SkeletonPulse />
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-32 flex justify-center flex-col items-center mb-32">
+        <div className="h-7 w-80 mb-4">
+          <SkeletonPulse />
+        </div>
+        <div className="w-full max-w-xl">
+          <div className="h-14 w-full bg-white rounded-xl border border-gray-300">
+            <SkeletonPulse />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 const USER_EMAIL_KEY = "jkvoca_user_email";
+
+const extractNumbers = (str: string) => {
+  const matches = str.match(/\d+/g);
+  if (!matches) return [0];
+  return matches.map(Number);
+};
+
+const compareClassroomNames = (a: { classroomName: string; }, b: { classroomName: string; }) => {
+  const aNumbers = extractNumbers(a.classroomName);
+  const bNumbers = extractNumbers(b.classroomName);
+  
+  if (aNumbers[0] !== bNumbers[0]) {
+    return aNumbers[0] - bNumbers[0];
+  }
+  
+  if (aNumbers.length > 1 && bNumbers.length > 1) {
+    return aNumbers[1] - bNumbers[1];
+  }
+  
+  if (aNumbers.length > 1) return 1;
+  if (bNumbers.length > 1) return -1;
+  
+  return a.classroomName.localeCompare(b.classroomName);
+};
 
 const ServiceIntroduction: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,21 +228,22 @@ const ServiceIntroduction: React.FC = () => {
     e.preventDefault();
   };
 
-  const filteredClassrooms = classrooms.filter(classroom => 
-    classroom.classroomName.toLowerCase().includes(adminSearchTerm.toLowerCase())
-  );
+  // 검색어를 기준으로 필터링하고, 정렬도 적용
+  const filteredClassrooms = classrooms
+    .filter(classroom => 
+      classroom.classroomName.toLowerCase().includes(adminSearchTerm.toLowerCase())
+    )
+    .sort(compareClassroomNames); // 숫자 순서대로 정렬
 
   const filteredVocabs = vocabs.filter(vocab => 
     vocab.vocabName.toLowerCase().includes(adminSearchTerm.toLowerCase())
   );
 
+  // 로딩 중 스켈레톤 UI 표시
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-          <span className="ml-3 text-lg">로딩 중...</span>
-        </div>
+        {isAdmin ? <AdminSkeletonUI /> : <UserSkeletonUI />}
       </Layout>
     );
   }
@@ -294,4 +457,4 @@ const ServiceIntroduction: React.FC = () => {
   );
 };
 
-export default ServiceIntroduction
+export default ServiceIntroduction;
