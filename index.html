@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -11,3 +11,19 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+<script>
+  fetch(
+    "https://web-statistics.ncloud.sbs/api/statistics/connect/ca1bd8e66dc499cc2b5564de14e9b0ff?visitor=" +
+      (localStorage.getItem("visitorId") || "anonymous")
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      if (!localStorage.getItem("visitorId")) {
+        localStorage.setItem(
+          "visitorId",
+          Math.random().toString(36).substring(2, 15)
+        );
+      }
+    })
+    .catch((error) => console.error("통계 기록 실패:", error));
+</script>
