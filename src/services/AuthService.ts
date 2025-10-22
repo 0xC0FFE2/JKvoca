@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:14872";
+const API_BASE_URL = "https://jkvoca-api.ncloud.sbs";
 
 export interface LoginRequest {
   username: string;
