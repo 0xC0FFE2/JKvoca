@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import OAuthSDK from "nanoid-websdk";
 import logo from "../../assets/logos/logo_RX_BLACK.svg";
 import logoMobile from "../../assets/logos/logo_RR.svg";
 import {
@@ -21,11 +20,7 @@ const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [userEmail, setUserEmail] = useState<string | null>(() => {
-    // 먼저 새로운 로그인 시스템 체크
-    const username = AuthService.getUsername();
-    if (username) return username;
-    // 없으면 기존 OAuth 시스템 체크
-    return localStorage.getItem(USER_EMAIL_KEY);
+    return AuthService.getUsername();
   });
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -45,40 +40,9 @@ const Header = () => {
   
   useEffect(() => {
     const fetchUserEmail = async () => {
-      // 먼저 새로운 로그인 시스템 체크
       const username = AuthService.getUsername();
       if (username) {
         setUserEmail(username);
-        return;
-      }
-
-      // 기존 OAuth 시스템 체크
-      if (localStorage.getItem(USER_EMAIL_KEY)) {
-        return;
-      }
-
-      const accessToken = await getValidToken();
-
-      if (accessToken) {
-        try {
-          const response = await fetch("https://auth.nanu.cc/auth/get/email", {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
-
-          const data = await response.text();
-          const email = data.trim();
-
-          // 이메일을 로컬 스토리지에 저장
-          if (email) {
-            localStorage.setItem(USER_EMAIL_KEY, email);
-            setUserEmail(email);
-          }
-        } catch (error) {
-          console.error("이메일 요청 중 오류 발생:", error);
-        }
       }
     };
 
@@ -102,18 +66,9 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    // 새로운 로그인 시스템 로그아웃
-    if (AuthService.isAuthenticated()) {
-      AuthService.logout();
-      setUserEmail(null);
-      navigate("/");
-      return;
-    }
-
-    // 기존 OAuth 시스템 로그아웃
-    localStorage.removeItem(USER_EMAIL_KEY);
+    AuthService.logout();
     setUserEmail(null);
-    OAuthSDK.logout("/");
+    navigate("/");
   };
 
   const handleLogin = () => {

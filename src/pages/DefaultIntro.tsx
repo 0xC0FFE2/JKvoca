@@ -184,17 +184,8 @@ const ServiceIntroduction: React.FC = () => {
 
   useEffect(() => {
     const checkAdmin = () => {
-      // 새로운 로그인 시스템 체크
       const username = AuthService.getUsername();
       if (username) {
-        setIsAdmin(true);
-        fetchData();
-        return;
-      }
-
-      // 기존 OAuth 시스템 체크
-      const userEmail = localStorage.getItem(USER_EMAIL_KEY);
-      if (userEmail) {
         setIsAdmin(true);
         fetchData();
       } else {
