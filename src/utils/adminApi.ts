@@ -1,6 +1,5 @@
 import axios, { AxiosInstance, AxiosError, AxiosResponse } from "axios";
-import { OAuthSDK } from "nanuid-websdk";
-import { getValidToken } from "./auth";
+import AuthService from "../services/AuthService";
 
 const instance: AxiosInstance = axios.create({
   baseURL: "https://jkvoca-api.ncloud.sbs/",
@@ -12,7 +11,8 @@ const instance: AxiosInstance = axios.create({
 
 instance.interceptors.request.use(
   async (config) => {
-    const token = await getValidToken();
+    // 새로운 로그인 시스템의 토큰 사용
+    const token = AuthService.getAccessToken();
 
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -31,7 +31,9 @@ instance.interceptors.response.use(
   },
   (error: AxiosError) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      OAuthSDK.logout("/");
+      // 401 에러 시 로그아웃 처리
+      AuthService.logout();
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }
