@@ -7,6 +7,7 @@ import { Vocab } from "../types/Vocab";
 import classroomService from "../services/AdminClassroomService";
 import { fetchAllVocabs } from "../services/AdminVocabService";
 import { Classroom } from "../services/VocabApiService";
+import AuthService from "../services/AuthService";
 
 // 스켈레톤 UI 컴포넌트
 const SkeletonPulse = () => (
@@ -183,6 +184,15 @@ const ServiceIntroduction: React.FC = () => {
 
   useEffect(() => {
     const checkAdmin = () => {
+      // 새로운 로그인 시스템 체크
+      const username = AuthService.getUsername();
+      if (username) {
+        setIsAdmin(true);
+        fetchData();
+        return;
+      }
+
+      // 기존 OAuth 시스템 체크
       const userEmail = localStorage.getItem(USER_EMAIL_KEY);
       if (userEmail) {
         setIsAdmin(true);
