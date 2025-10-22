@@ -8,12 +8,14 @@ import OAuthHandler from "./pages/OAuthHandler";
 import VocabManagementPage from "./pages/VocabManagementPage";
 import ClassroomManagementPage from "./pages/ClassroomManagementPage";
 import ClassroomDetail from "./pages/ClassroomDetailPage";
+import LoginPage from "./pages/LoginPage";
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<ServiceIntroduction />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/search/:keyword" element={<SearchResultsPage />} />
         <Route path="/vocabulary/:vocabId" element={<VocabularyPage />} />
         <Route path="/flashcard/:vocabId" element={<FlashcardPage />} />
